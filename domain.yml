@@ -2,81 +2,131 @@ version: "3.1"
 
 intents:
   - greet
-  - goodbye
+  - want_recommendation
+  - want_booking
+  - inform
   - affirm
   - deny
-  - provide_cuisine
-  - provide_party_size
-  - provide_time
-  - confirm_booking
-  - bot_challenge
-  - out_of_scope
+  - stop
 
 entities:
+  - district
   - cuisine
-  - party_size
+  - restaurant_name
   - time
+  - date
+  - num_people
 
 slots:
+  dialog_path:
+    type: categorical
+    values:
+      - recommendation
+      - direct_booking
+    initial_value: null
+    mappings:
+      - type: custom
+
+  district:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: district
+
   cuisine:
     type: text
-    influence_conversation: true
     mappings:
       - type: from_entity
         entity: cuisine
-  party_size:
+
+  restaurant_name:
     type: text
-    influence_conversation: true
     mappings:
       - type: from_entity
-        entity: party_size
+        entity: restaurant_name
+
   time:
     type: text
-    influence_conversation: true
     mappings:
       - type: from_entity
         entity: time
-  restaurant_choice:
+
+  date:
     type: text
-    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: date
+
+  num_people:
+    type: float
+    mappings:
+      - type: from_entity
+        entity: num_people
+
+  # System A/B condition assigned at session start by FastAPI
+  system_version:
+    type: categorical
+    values:
+      - A
+      - B
+    initial_value: null
     mappings:
       - type: custom
 
 responses:
   utter_greet:
-    - text: "Hi! I can help you book a restaurant table. What kind of cuisine are you in the mood for?"
+    - text: "Hello! I can help you find a restaurant or make a booking. Would you like a recommendation, or do you already have a place in mind?"
+
+  utter_ask_district:
+    - text: "Which district are you looking in?"
 
   utter_ask_cuisine:
-    - text: "What kind of cuisine would you like? For example Italian, Japanese, or something else."
+    - text: "What cuisine are you in the mood for?"
 
-  utter_ask_party_size:
-    - text: "Great choice. How many people will be joining?"
+  utter_give_recommendations:
+    - text: "Here are some options based on your preferences: [Restaurant A], [Restaurant B], [Restaurant C]. Would you like to book one of these?"
+
+  utter_ask_restaurant_name:
+    - text: "Which restaurant would you like to book?"
+
+  utter_confirm_recommendation_choice:
+    - text: "Great choice! Shall I go ahead and book that for you?"
 
   utter_ask_time:
-    - text: "And what time would you like the reservation for?"
+    - text: "What time would you like the reservation?"
 
-  utter_confirm_booking_prompt:
-    - text: "Just to confirm: a table for {party_size} at {restaurant_choice} for {time}. Shall I book it?"
+  utter_ask_date:
+    - text: "What date works for you?"
+
+  utter_ask_num_people:
+    - text: "How many people will be dining?"
+
+  utter_confirm_booking:
+    - text: "Just to confirm: {restaurant_name} on {date} at {time} for {num_people} people. Does that sound right?"
 
   utter_booking_confirmed:
-    - text: "Your table is booked. Looking forward to your visit!"
+    - text: "Perfect, your reservation is confirmed. Enjoy your meal!"
 
-  utter_booking_declined:
-    - text: "No problem, let me know if you'd like to change anything."
+  utter_booking_cancelled:
+    - text: "No problem, the booking has been cancelled."
 
-  utter_goodbye:
-    - text: "Goodbye, and enjoy your meal!"
+  utter_ask_restart:
+    - text: "Is there anything else I can help you with?"
 
-  utter_iamabot:
-    - text: "I'm a virtual assistant built with Rasa, here to help you book a restaurant table."
-
-  utter_default:
-    - text: "Sorry, I didn't quite catch that. Could you rephrase?"
+  # System B difficulty injections (stubs — flesh out in custom actions)
+  utter_booking_error_system_b:
+    - text: "I'm sorry, I'm having trouble processing that. Could you repeat the date?"
 
 actions:
-  - action_recommend_restaurant
-  - action_confirm_booking
+  - action_set_dialog_path
+  - action_handle_booking
+  - action_give_recommendations
+  - validate_booking_form
 
-session_config:
-  session_expiration_time: 60
-  carry_over_slots_to_new_session: true
+forms:
+  booking_form:
+    required_slots:
+      - restaurant_name
+      - date
+      - time
+      - num_people

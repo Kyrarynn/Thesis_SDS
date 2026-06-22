@@ -2,17 +2,28 @@ version: "3.1"
 
 rules:
 
-- rule: say goodbye whenever the user wants to leave
-  steps:
-    - intent: goodbye
-    - action: utter_goodbye
+  # Activate booking form whenever required slots are missing
+  - rule: activate booking form
+    condition:
+      - active_loop: null
+    steps:
+      - intent: want_booking
+      - action: booking_form
+      - active_loop: booking_form
 
-- rule: say 'I am a bot' whenever the user asks
-  steps:
-    - intent: bot_challenge
-    - action: utter_iamabot
+  # Keep form active while slots are being filled
+  - rule: submit booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - action: booking_form
+      - active_loop: null
+      - action: action_handle_booking
 
-- rule: handle out of scope messages
-  steps:
-    - intent: out_of_scope
-    - action: utter_default
+  # Hard stop / cancel at any point
+  - rule: user stops dialog
+    steps:
+      - intent: stop
+      - action: utter_booking_cancelled
+      - action: action_deactivate_loop
+      - active_loop: null

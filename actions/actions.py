@@ -1,34 +1,21 @@
-from typing import Any, Text, Dict, List
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
+from typing import Any, Dict, List, Text
+import logging
 
-# Placeholder restaurant data. Replace with a real lookup later
-# (e.g. a small fixed list per condition, or a JSON/Mongo lookup).
-RESTAURANTS_BY_CUISINE = {
-    "italian": "Trattoria Bella",
-    "japanese": "Sakura Sushi",
-    "greek": "Olive Taverna",
-    "indian": "Spice Route",
-    "mexican": "Casa Verde",
-    "thai": "Lotus Thai",
-    "chinese": "Golden Dragon",
-}
-
-DEFAULT_RESTAURANT = "The Garden Bistro"
+logger = logging.getLogger(__name__)
 
 
-class ActionRecommendRestaurant(Action):
-    """Looks up a restaurant suggestion based on the cuisine slot.
-
-    This is where you would later inject the induced difficulty for
-    System Version A (e.g. delay, wrong recommendation, or a forced
-    clarification loop) since the recommendation step happens early
-    in the conversation.
+class ActionSetDialogPath(Action):
+    """
+    Called immediately after the user chooses recommendation vs. direct booking.
+    Sets the dialog_path slot so downstream actions (and your analysis) know
+    which branch was taken.
     """
 
     def name(self) -> Text:
-        return "action_recommend_restaurant"
+        return "action_set_dialog_path"
 
     def run(
         self,
@@ -36,27 +23,73 @@ class ActionRecommendRestaurant(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        cuisine = (tracker.get_slot("cuisine") or "").lower()
-        restaurant = RESTAURANTS_BY_CUISINE.get(cuisine, DEFAULT_RESTAURANT)
 
+        last_intent = tracker.latest_message.get("intent", {}).get("name")
+
+        if last_intent == "want_recommendation":
+            path = "recommendation"
+        elif last_intent == "want_booking":
+            path = "direct_booking"
+        else:
+            path = "direct_booking"  # safe fallback
+
+        logger.info(f"Dialog path set to: {path}")
+        return [SlotSet("dialog_path", path)]
+
+
+class ActionGiveRecommendations(Action):
+    """
+    Returns a list of restaurant recommendations based on district + cuisine slots.
+    Replace the stub list with a real lookup (DB, API, etc.) when ready.
+    """
+
+    def name(self) -> Text:
+        return "action_give_recommendations"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+
+        district = tracker.get_slot("district") or "your area"
+        cuisine = tracker.get_slot("cuisine") or "various cuisines"
+
+        # --- STUB: replace with real restaurant data ---
+        recommendations = [
+            "Restaurant Alpha",
+            "Restaurant Beta",
+            "Restaurant Gamma",
+        ]
+        # ------------------------------------------------
+
+        rec_list = ", ".join(recommendations)
         dispatcher.utter_message(
-            text=f"I'd recommend {restaurant} for {cuisine or 'that'} food."
+            text=(
+                f"Here are some {cuisine} restaurants in {district}: "
+                f"{rec_list}. Would you like to book one of these?"
+            )
         )
 
-        return [SlotSet("restaurant_choice", restaurant)]
+        # Pre-fill restaurant_name with first suggestion as default;
+        # overwritten if user specifies one explicitly.
+        return [SlotSet("restaurant_name", recommendations[0])]
 
 
-class ActionConfirmBooking(Action):
-    """Finalizes the booking.
+class ActionHandleBooking(Action):
+    """
+    Final booking action. Checks system_version slot to decide whether to
+    complete smoothly (System A) or inject a planned difficulty (System B).
 
-    This is where you would later inject the induced difficulty for
-    System Version B (e.g. a failed booking attempt, a request to
-    repeat information, or an unavailable time slot) since this step
-    happens near the end of the conversation.
+    System B difficulty is injected HERE, not scattered through stories,
+    so it stays in one place and is easy to adjust for your study.
+
+    dialog_path is also logged here for your IQ analysis pipeline.
     """
 
     def name(self) -> Text:
-        return "action_confirm_booking"
+        return "action_handle_booking"
 
     def run(
         self,
@@ -64,8 +97,53 @@ class ActionConfirmBooking(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        # Placeholder: in the real study, log this event (with a
-        # timestamp and session/condition ID) to MongoDB from here
-        # or, more simply, from the FastAPI orchestrator that calls
-        # Rasa, so all logging logic stays in one place.
-        return []
+
+        system_version = tracker.get_slot("system_version")  # "A" or "B"
+        dialog_path = tracker.get_slot("dialog_path")        # "recommendation" or "direct_booking"
+        restaurant = tracker.get_slot("restaurant_name")
+        date = tracker.get_slot("date")
+        time = tracker.get_slot("time")
+        num_people = tracker.get_slot("num_people")
+
+        logger.info(
+            f"Booking attempt | system={system_version} | path={dialog_path} | "
+            f"restaurant={restaurant} | date={date} | time={time} | people={num_people}"
+        )
+
+        if system_version == "B" and dialog_path == "direct_booking":
+            # -------------------------------------------------------
+            # SYSTEM B DIFFICULTY INJECTION — direct booking path
+            # The flag logic you described: difficulty only fires when
+            # the user skipped the recommendation path.
+            #
+            # TODO: choose your difficulty type, e.g.:
+            #   - Slot reset (force user to re-enter date)
+            #   - ASR-style misunderstanding ("Did you say Tuesday?")
+            #   - Confirmation loop that fails once before succeeding
+            # -------------------------------------------------------
+            dispatcher.utter_message(
+                text="I'm sorry, I couldn't find that restaurant in our system. "
+                     "Could you double-check the name?"
+            )
+            # Reset restaurant slot to force re-entry
+            return [SlotSet("restaurant_name", None)]
+
+        elif system_version == "B" and dialog_path == "recommendation":
+            # -------------------------------------------------------
+            # SYSTEM B DIFFICULTY INJECTION — recommendation path
+            # Milder difficulty (or none) since user followed the
+            # guided flow. Adjust to match your study design.
+            # -------------------------------------------------------
+            dispatcher.utter_message(
+                text=f"To confirm: {restaurant} on {date} at {time} "
+                     f"for {num_people} people — shall I go ahead?"
+            )
+            return []
+
+        else:
+            # System A — smooth confirmation, no friction
+            dispatcher.utter_message(
+                text=f"To confirm: {restaurant} on {date} at {time} "
+                     f"for {num_people} people — shall I go ahead?"
+            )
+            return []
