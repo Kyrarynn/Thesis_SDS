@@ -1,0 +1,82 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - provide_cuisine
+  - provide_party_size
+  - provide_time
+  - confirm_booking
+  - bot_challenge
+  - out_of_scope
+
+entities:
+  - cuisine
+  - party_size
+  - time
+
+slots:
+  cuisine:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: cuisine
+  party_size:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: party_size
+  time:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: time
+  restaurant_choice:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+responses:
+  utter_greet:
+    - text: "Hi! I can help you book a restaurant table. What kind of cuisine are you in the mood for?"
+
+  utter_ask_cuisine:
+    - text: "What kind of cuisine would you like? For example Italian, Japanese, or something else."
+
+  utter_ask_party_size:
+    - text: "Great choice. How many people will be joining?"
+
+  utter_ask_time:
+    - text: "And what time would you like the reservation for?"
+
+  utter_confirm_booking_prompt:
+    - text: "Just to confirm: a table for {party_size} at {restaurant_choice} for {time}. Shall I book it?"
+
+  utter_booking_confirmed:
+    - text: "Your table is booked. Looking forward to your visit!"
+
+  utter_booking_declined:
+    - text: "No problem, let me know if you'd like to change anything."
+
+  utter_goodbye:
+    - text: "Goodbye, and enjoy your meal!"
+
+  utter_iamabot:
+    - text: "I'm a virtual assistant built with Rasa, here to help you book a restaurant table."
+
+  utter_default:
+    - text: "Sorry, I didn't quite catch that. Could you rephrase?"
+
+actions:
+  - action_recommend_restaurant
+  - action_confirm_booking
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

@@ -1,0 +1,51 @@
+version: "3.1"
+
+stories:
+
+- story: happy path full booking
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: provide_cuisine
+    - action: utter_ask_party_size
+    - intent: provide_party_size
+    - action: utter_ask_time
+    - intent: provide_time
+    - action: action_recommend_restaurant
+    - action: utter_confirm_booking_prompt
+    - intent: confirm_booking
+    - action: action_confirm_booking
+    - action: utter_booking_confirmed
+    - intent: goodbye
+    - action: utter_goodbye
+
+- story: happy path with affirm instead of explicit confirm
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: provide_cuisine
+    - action: utter_ask_party_size
+    - intent: provide_party_size
+    - action: utter_ask_time
+    - intent: provide_time
+    - action: action_recommend_restaurant
+    - action: utter_confirm_booking_prompt
+    - intent: affirm
+    - action: action_confirm_booking
+    - action: utter_booking_confirmed
+    - intent: goodbye
+    - action: utter_goodbye
+
+- story: user declines booking
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: provide_cuisine
+    - action: utter_ask_party_size
+    - intent: provide_party_size
+    - action: utter_ask_time
+    - intent: provide_time
+    - action: action_recommend_restaurant
+    - action: utter_confirm_booking_prompt
+    - intent: deny
+    - action: utter_booking_declined

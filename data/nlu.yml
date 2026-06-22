@@ -1,0 +1,86 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - hi
+    - hello
+    - hey there
+    - good morning
+    - good evening
+    - hi there, I'd like to book a table
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you later
+    - that's all, thanks
+    - thanks, bye
+
+- intent: affirm
+  examples: |
+    - yes
+    - yes please
+    - that's right
+    - sounds good
+    - sure
+    - correct
+
+- intent: deny
+  examples: |
+    - no
+    - no thanks
+    - not really
+    - that's not right
+    - cancel that
+
+- intent: provide_cuisine
+  examples: |
+    - [Italian](cuisine) food sounds good
+    - I'd like [Japanese](cuisine)
+    - something [Greek](cuisine) please
+    - [Indian](cuisine) food
+    - maybe [Mexican](cuisine)
+    - [Thai](cuisine) would be great
+    - I feel like [Italian](cuisine)
+    - [Chinese](cuisine) food please
+
+- intent: provide_party_size
+  examples: |
+    - [2](party_size) people
+    - just [1](party_size)
+    - a table for [4](party_size)
+    - [6](party_size) of us
+    - there will be [3](party_size) of us
+    - [5](party_size)
+
+- intent: provide_time
+  examples: |
+    - [7pm](time)
+    - around [8 o'clock](time)
+    - [6:30pm](time)
+    - how about [7:30](time)
+    - [9pm](time) works for me
+    - let's say [8pm](time)
+
+- intent: confirm_booking
+  examples: |
+    - please book it
+    - go ahead and confirm
+    - yes, book the table
+    - confirm the reservation
+
+- intent: bot_challenge
+  examples: |
+    - are you a bot?
+    - am I talking to a human?
+    - is this an AI?
+    - are you real?
+
+- intent: out_of_scope
+  examples: |
+    - what's the weather like?
+    - tell me a joke
+    - what's your favorite movie?
+    - can you help me with my homework?

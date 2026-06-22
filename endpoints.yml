@@ -1,0 +1,9 @@
+action_endpoint:
+  url: "http://localhost:5055/webhook"
+
+# Once you log conversation data yourself via the FastAPI orchestrator
+# (recommended, see the project README), you generally won't need a
+# tracker_store entry here. If you later want Rasa's own tracker store
+# backed by MongoDB instead, check the current Rasa documentation for
+# the correct configuration syntax for your installed Rasa version,
+# since tracker store options have changed across versions.
