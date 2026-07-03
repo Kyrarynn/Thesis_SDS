@@ -12,14 +12,9 @@ stories:
     - action: utter_greet
     - intent: want_recommendation
     - action: action_set_dialog_path        # sets dialog_path = "recommendation"
-    - action: utter_ask_district
-    - intent: inform
-      entities:
-        - district: "Mitte"
-    - action: utter_ask_cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Italian"
+    - action: recommendation_form
+    - active_loop: recommendation_form
+    - active_loop: null
     - action: action_give_recommendations   # returns list, sets restaurant_name slot on choice
     - intent: affirm
     - action: utter_confirm_recommendation_choice
@@ -37,21 +32,14 @@ stories:
     - action: utter_greet
     - intent: want_recommendation
     - action: action_set_dialog_path
-    - action: utter_ask_district
-    - intent: inform
-      entities:
-        - district: "Prenzlauer Berg"
-    - action: utter_ask_cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Thai"
+    - action: recommendation_form
+    - active_loop: recommendation_form
+    - active_loop: null
     - action: action_give_recommendations
     - intent: deny                          # user doesn't like the suggestions
-    - action: utter_ask_cuisine             # re-ask with different cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Japanese"
-    - action: action_give_recommendations
+    - action: recommendation_form
+    - active_loop: recommendation_form
+    - active_loop: null
     - intent: affirm
     - action: utter_confirm_recommendation_choice
     - intent: affirm
@@ -68,14 +56,9 @@ stories:
     - action: utter_greet
     - intent: want_recommendation
     - action: action_set_dialog_path
-    - action: utter_ask_district
-    - intent: inform
-      entities:
-        - district: "Kreuzberg"
-    - action: utter_ask_cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Vietnamese"
+    - action: recommendation_form
+    - active_loop: recommendation_form
+    - active_loop: null
     - action: action_give_recommendations
     - intent: affirm
     - action: utter_confirm_recommendation_choice
@@ -137,3 +120,4 @@ stories:
     - action: action_handle_booking
     - intent: affirm
     - action: utter_booking_confirmed
+

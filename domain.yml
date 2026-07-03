@@ -12,6 +12,7 @@ intents:
   - confirm_booking
   - provide_time
   - provide_party_size
+  - provide_district
 
 entities:
   - district
@@ -126,8 +127,15 @@ actions:
   - action_handle_booking
   - action_give_recommendations
   - validate_booking_form
+  - validate_recommendation_form
 
 forms:
+
+  recommendation_form:
+    required_slots:
+      - district
+      - cuisine  
+
   booking_form:
     required_slots:
       - restaurant_name

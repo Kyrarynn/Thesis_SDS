@@ -212,3 +212,36 @@ class ValidateBookingForm(FormValidationAction):
         except (ValueError, TypeError):
             dispatcher.utter_message(text="I need a number for the party size. How many people?")
             return {"num_people": None}
+
+
+class ValidateRecommendationForm(FormValidationAction):
+    """
+    Validates district and cuisine slots during the recommendation form.
+    """
+ 
+    def name(self) -> Text:
+        return "validate_recommendation_form"
+ 
+    def validate_district(
+        self,
+        slot_value: Any,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> Dict[Text, Any]:
+        if slot_value and len(slot_value.strip()) > 1:
+            return {"district": slot_value.strip()}
+        dispatcher.utter_message(text="I didn't catch the district. Which area are you looking in?")
+        return {"district": None}
+ 
+    def validate_cuisine(
+        self,
+        slot_value: Any,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> Dict[Text, Any]:
+        if slot_value and len(slot_value.strip()) > 1:
+            return {"cuisine": slot_value.strip()}
+        dispatcher.utter_message(text="I didn't catch the cuisine type. What kind of food are you in the mood for?")
+        return {"cuisine": None}

@@ -1,0 +1,89 @@
+{
+  "type": "MaxHistoryTrackerFeaturizer",
+  "state_featurizer": {
+    "action_texts": [],
+    "entity_tag_specs": [],
+    "feature_states": {
+      "intent": {
+        "affirm": 0,
+        "back": 1,
+        "confirm_booking": 2,
+        "deny": 3,
+        "greet": 4,
+        "inform": 5,
+        "nlu_fallback": 6,
+        "out_of_scope": 7,
+        "provide_cuisine": 8,
+        "provide_party_size": 9,
+        "provide_time": 10,
+        "restart": 11,
+        "session_start": 12,
+        "stop": 13,
+        "want_booking": 14,
+        "want_recommendation": 15
+      },
+      "action_name": {
+        "action_listen": 0,
+        "action_restart": 1,
+        "action_session_start": 2,
+        "action_default_fallback": 3,
+        "action_deactivate_loop": 4,
+        "action_revert_fallback_events": 5,
+        "action_default_ask_affirmation": 6,
+        "action_default_ask_rephrase": 7,
+        "action_two_stage_fallback": 8,
+        "action_unlikely_intent": 9,
+        "action_back": 10,
+        "...": 11,
+        "action_extract_slots": 12,
+        "action_set_dialog_path": 13,
+        "action_handle_booking": 14,
+        "action_give_recommendations": 15,
+        "validate_booking_form": 16,
+        "utter_ask_cuisine": 17,
+        "utter_ask_date": 18,
+        "utter_ask_district": 19,
+        "utter_ask_num_people": 20,
+        "utter_ask_restart": 21,
+        "utter_ask_restaurant_name": 22,
+        "utter_ask_time": 23,
+        "utter_booking_cancelled": 24,
+        "utter_booking_confirmed": 25,
+        "utter_booking_error_system_b": 26,
+        "utter_confirm_booking": 27,
+        "utter_confirm_recommendation_choice": 28,
+        "utter_give_recommendations": 29,
+        "utter_greet": 30,
+        "booking_form": 31
+      },
+      "entities": {
+        "cuisine": 0,
+        "date": 1,
+        "district": 2,
+        "num_people": 3,
+        "restaurant_name": 4,
+        "time": 5
+      },
+      "slots": {
+        "dialog_path_0": 0,
+        "dialog_path_1": 1,
+        "dialog_path_2": 2,
+        "district_0": 3,
+        "cuisine_0": 4,
+        "restaurant_name_0": 5,
+        "time_0": 6,
+        "date_0": 7,
+        "num_people_0": 8,
+        "num_people_1": 9,
+        "system_version_0": 10,
+        "system_version_1": 11,
+        "system_version_2": 12
+      },
+      "active_loop": {
+        "booking_form": 0
+      }
+    }
+  },
+  "remove_duplicates": true,
+  "max_history": 5
+}

@@ -40,6 +40,31 @@ nlu:
     - That's not what I want
     - That's not what I mean
 
+- intent: want_recommendation
+  examples: |
+    - A recommendation please
+    - Recommendation
+    - Please recommend me something
+    - Could you give me a recommendation 
+    - Give me a recommendation 
+    - What do you recommend?
+    - A recommendation sounds good
+    - I need advice
+    - Lets see what you can recommend 
+    - I want a recommendation 
+
+- intent: provide_district
+  examples: |
+    - Mitte
+    - Charlottenburg
+    - Prenzlauer Berg
+    - Schöneberg
+    - Tempelhof
+    - Pankow
+    - Spandau
+    - Steglitz
+    - Kreuzberg
+
 - intent: provide_cuisine
   examples: |
     - [Italian](cuisine) food sounds good
