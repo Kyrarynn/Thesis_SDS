@@ -2,6 +2,21 @@ version: "3.1"
 
 rules:
 
+  # - rule: want_recommendation
+  #   condition:
+  #     - active_loop: recommendation_form
+  #   steps:
+  #     - intent: want_recommendation
+  #     - action: utter_ask_district
+  #     - intent: provide_district
+  #     - action: utter_ask_cuisine
+  #     - intent: provide_cuisine
+  #     - action: utter_ask_recommendation_settings_confirmation
+  #     - intent: affirm
+  #     - active_loop: null
+  #     - action: utter_give_recommendations
+  #     - action: utter_confirm_recommendation_choice
+
   # Keep form active while slots are being filled
   - rule: submit booking form
     condition:

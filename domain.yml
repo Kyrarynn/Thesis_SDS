@@ -109,6 +109,9 @@ responses:
   utter_confirm_booking:
     - text: "Just to confirm: {restaurant_name} on {date} at {time} for {num_people} people. Does that sound right?"
 
+  utter_confirm_recommendation_settings_confirmation:
+    - text: "Just to confirm: You are looking for a {cuisine} restaurant in {district}?"
+
   utter_booking_confirmed:
     - text: "Perfect, your reservation is confirmed. Enjoy your meal!"
 

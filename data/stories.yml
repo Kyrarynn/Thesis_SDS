@@ -11,11 +11,17 @@ stories:
     - intent: greet
     - action: utter_greet
     - intent: want_recommendation
-    - action: action_set_dialog_path        # sets dialog_path = "recommendation"
-    - action: recommendation_form
-    - active_loop: recommendation_form
-    - active_loop: null
-    - action: action_give_recommendations   # returns list, sets restaurant_name slot on choice
+    #- action: action_set_dialog_path        # sets dialog_path = "recommendation"
+    #- active_loop: recommendation_form
+    - action: utter_ask_district
+    - intent: provide_district
+    - action: utter_ask_cuisine
+    - intent: provide_cuisine
+    - action: utter_confirm_recommendation_settings_confirmation
+    - intent: affirm
+    #- active_loop: null
+    - action: utter_give_recommendations
+    - action: utter_confirm_recommendation_choice   # returns list, sets restaurant_name slot on choice
     - intent: affirm
     - action: utter_confirm_recommendation_choice
     - intent: affirm
@@ -26,49 +32,49 @@ stories:
     - intent: affirm
     - action: utter_booking_confirmed
 
-- story: recommendation path - user denies recommendation list
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: want_recommendation
-    - action: action_set_dialog_path
-    - action: recommendation_form
-    - active_loop: recommendation_form
-    - active_loop: null
-    - action: action_give_recommendations
-    - intent: deny                          # user doesn't like the suggestions
-    - action: recommendation_form
-    - active_loop: recommendation_form
-    - active_loop: null
-    - intent: affirm
-    - action: utter_confirm_recommendation_choice
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
+# - story: recommendation path - user denies recommendation list
+#   steps:
+#     - intent: greet
+#     - action: utter_greet
+#     - intent: want_recommendation
+#     # - action: action_set_dialog_path
+#     - action: recommendation_form
+#     - active_loop: recommendation_form
+#     - active_loop: null
+#     - action: action_give_recommendations
+#     - intent: deny                          # user doesn't like the suggestions
+#     - action: recommendation_form
+#     - active_loop: recommendation_form
+#     - active_loop: null
+#     - intent: affirm
+#     - action: utter_confirm_recommendation_choice
+#     - intent: affirm
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: affirm
+#     - action: utter_booking_confirmed
 
-- story: recommendation path - user denies final booking confirmation
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: want_recommendation
-    - action: action_set_dialog_path
-    - action: recommendation_form
-    - active_loop: recommendation_form
-    - active_loop: null
-    - action: action_give_recommendations
-    - intent: affirm
-    - action: utter_confirm_recommendation_choice
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: deny                          # user rejects final confirmation
-    - action: utter_booking_cancelled
+# - story: recommendation path - user denies final booking confirmation
+#   steps:
+#     - intent: greet
+#     - action: utter_greet
+#     - intent: want_recommendation
+#     # - action: action_set_dialog_path
+#     - action: recommendation_form
+#     - active_loop: recommendation_form
+#     - active_loop: null
+#     - action: action_give_recommendations
+#     - intent: affirm
+#     - action: utter_confirm_recommendation_choice
+#     - intent: affirm
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: deny                          # user rejects final confirmation
+#     - action: utter_booking_cancelled
 
 # ============================================================
 # PATH B — Direct Booking (no recommendation)
@@ -108,16 +114,16 @@ stories:
     - intent: deny
     - action: utter_booking_cancelled
 
-- story: direct booking path - user provides restaurant upfront
-  steps:
-    - intent: want_booking
-      entities:
-        - restaurant_name: "Trattoria Roma"
-    - action: action_set_dialog_path
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
+# - story: direct booking path - user provides restaurant upfront
+#   steps:
+#     - intent: want_booking
+#       entities:
+#         - restaurant_name: "Trattoria Roma"
+#     - action: action_set_dialog_path
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: affirm
+#     - action: utter_booking_confirmed
 
