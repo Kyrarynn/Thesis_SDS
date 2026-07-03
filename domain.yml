@@ -8,6 +8,10 @@ intents:
   - affirm
   - deny
   - stop
+  - provide_cuisine
+  - confirm_booking
+  - provide_time
+  - provide_party_size
 
 entities:
   - district

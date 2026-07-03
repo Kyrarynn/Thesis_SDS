@@ -1,7 +1,9 @@
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
-from typing import Any, Dict, List, Text
+from rasa_sdk.forms import FormValidationAction
+from rasa_sdk.types import DomainDict
+from typing import Any, Dict, List, Text, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -147,3 +149,66 @@ class ActionHandleBooking(Action):
                      f"for {num_people} people — shall I go ahead?"
             )
             return []
+
+
+class ValidateBookingForm(FormValidationAction):
+    """
+    Validates each slot as it is filled during the booking form.
+    Rejects nonsense values and re-prompts the user cleanly.
+    """
+ 
+    def name(self) -> Text:
+        return "validate_booking_form"
+ 
+    def validate_restaurant_name(
+        self,
+        slot_value: Any,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> Dict[Text, Any]:
+        if slot_value and len(slot_value.strip()) > 1:
+            return {"restaurant_name": slot_value.strip()}
+        dispatcher.utter_message(text="I didn't catch the restaurant name. Could you say it again?")
+        return {"restaurant_name": None}
+ 
+    def validate_date(
+        self,
+        slot_value: Any,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> Dict[Text, Any]:
+        if slot_value:
+            return {"date": slot_value}
+        dispatcher.utter_message(text="I didn't catch the date. Could you repeat it?")
+        return {"date": None}
+ 
+    def validate_time(
+        self,
+        slot_value: Any,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> Dict[Text, Any]:
+        if slot_value:
+            return {"time": slot_value}
+        dispatcher.utter_message(text="I didn't catch the time. Could you say it again?")
+        return {"time": None}
+ 
+    def validate_num_people(
+        self,
+        slot_value: Any,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> Dict[Text, Any]:
+        try:
+            n = int(slot_value)
+            if 1 <= n <= 20:
+                return {"num_people": n}
+            dispatcher.utter_message(text="That number seems off — please enter a number between 1 and 20.")
+            return {"num_people": None}
+        except (ValueError, TypeError):
+            dispatcher.utter_message(text="I need a number for the party size. How many people?")
+            return {"num_people": None}

@@ -2,15 +2,6 @@ version: "3.1"
 
 rules:
 
-  # Activate booking form whenever required slots are missing
-  - rule: activate booking form
-    condition:
-      - active_loop: null
-    steps:
-      - intent: want_booking
-      - action: booking_form
-      - active_loop: booking_form
-
   # Keep form active while slots are being filled
   - rule: submit booking form
     condition:

@@ -26,6 +26,7 @@ nlu:
     - sounds good
     - sure
     - correct
+    - yeah
 
 - intent: deny
   examples: |
@@ -34,6 +35,10 @@ nlu:
     - not really
     - that's not right
     - cancel that
+    - cancel
+    - I don't want that
+    - That's not what I want
+    - That's not what I mean
 
 - intent: provide_cuisine
   examples: |
