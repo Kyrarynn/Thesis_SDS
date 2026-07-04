@@ -2,6 +2,14 @@ version: "3.1"
 
 rules:
 
+  - rule: restart at any point
+    steps: 
+      - intent: restart
+      - active_loop: null
+      - action: utter_ask_restart
+
+
+
   # Activate booking form whenever required slots are missing
   - rule: activate booking form
     condition:

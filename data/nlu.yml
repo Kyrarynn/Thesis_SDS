@@ -6,6 +6,7 @@ nlu:
     - hi
     - hello
     - hey there
+    - hey
     - good morning
     - good evening
     - hi there, I'd like to book a table
@@ -17,6 +18,12 @@ nlu:
     - see you later
     - that's all, thanks
     - thanks, bye
+    - chiao
+    - tschüss
+    - thanks, goodbye
+    - see you
+    - end session
+    - exit
 
 - intent: affirm
   examples: |
@@ -26,6 +33,8 @@ nlu:
     - sounds good
     - sure
     - correct
+    - okay
+    - ok
 
 - intent: deny
   examples: |
@@ -34,35 +43,231 @@ nlu:
     - not really
     - that's not right
     - cancel that
+    - that's wrong
+    - no, stop
+    - that's false
+    - false
+    - cancel
+    - no you didn't understand that correctly
+    - you made a mistake
+    - no, there is a mistake
+
+
+- intent: choose_recommendation_path
+  examples: |
+    - I want a recommendation
+    - Give me a recommendation
+    - Recommend me something
+    - A recommendations sounds good
+    - A recommendation would be helpful
+    - Please recommend me a restaurant
+    - Help me choose where to eat
+    - I don't have a place in mind.
+    - I don't know where I want to eat
+    - I am unsure where to eat
+
+- intent: provide_district
+  examples: |
+    - Mitte
+    - Charlottenburg
+    - Steglitz
+    - Spandau
+    - Prenzlauer Berg
+    - Tempelhof
+    - Schöneberg
+    - Kreuzberg
+    - Pankow
+    - Hoppegarten
 
 - intent: provide_cuisine
   examples: |
-    - [Italian](cuisine) food sounds good
-    - I'd like [Japanese](cuisine)
-    - something [Greek](cuisine) please
-    - [Indian](cuisine) food
-    - maybe [Mexican](cuisine)
-    - [Thai](cuisine) would be great
-    - I feel like [Italian](cuisine)
-    - [Chinese](cuisine) food please
+    - Italian
+    - Italian please
+    - Italian sounds good
+    - I want to eat at a Italian place
+    - I am craving Italian food
+    - Italian food would be nice 
+    - German 
+    - German please
+    - German sounds good
+    - I want to eat at a German place
+    - I am craving German food
+    - German food would be nice 
+    - Thai
+    - Thai please
+    - Thai sounds good
+    - I want to eat at a Thai place
+    - I am craving Thai food
+    - Thai food would be nice 
+    - Japanese
+    - Japanese please
+    - Japanese sounds good
+    - I want to eat at a Japanese place
+    - I am craving Japanese food
+    - Japanese food would be nice 
+    - Chinese
+    - Chinese please
+    - Chinese sounds good
+    - I want to eat at a Chinese place
+    - I am craving Chinese food
+    - Chinese food would be nice 
+    - Indian
+    - Indian please
+    - Indian sounds good
+    - I want to eat at a Indian place
+    - I am craving Indian food
+    - Indian food would be nice 
+    - Mexican
+    - Mexican please
+    - Mexican sounds good
+    - I want to eat at a Mexican place
+    - I am craving Mexican food
+    - Mexican food would be nice 
+    - Greek
+    - Greek please
+    - Greek sounds good
+    - I want to eat at a Greek place
+    - I am craving Greek food
+    - Greek food would be nice 
 
-- intent: provide_party_size
+
+- intent: provide_food_preference
   examples: |
-    - [2](party_size) people
-    - just [1](party_size)
-    - a table for [4](party_size)
-    - [6](party_size) of us
-    - there will be [3](party_size) of us
-    - [5](party_size)
+    - vegan
+    - I am looking for vegan places
+    - Please recommend me vegan restaurant
+    - I would like to go to a vegan place
+    - Recommend me something with vegan options
+    - I want vegan food 
+    - vegetarian
+    - I am looking for vegetarian places
+    - Please recommend me vegetarian restaurant
+    - I would like to go to a vegetarian place
+    - Recommend me something with vegetarian options
+    - I want vegetarian food 
+    - gluten free 
+    - I am looking for gluten free places
+    - Please recommend me gluten free restaurant
+    - I would like to go to a gluten free place
+    - Recommend me something with gluten free options
+    - I want gluten free food 
+    - halal
+    - I am looking for halal places
+    - Please recommend me halal restaurant
+    - I would like to go to a halal place
+    - Recommend me something with halal options
+    - I want halal food 
+    - no preference
+
+    - I have no preference
+    - I don't care 
+    - No
+    - Not really 
+
+- intent: choose_recommendation
+  examples: |
+    - Option A 
+    - I want option A
+    - Option A sounds good
+    - I choose option A
+    - Let's book a table for restaurant A 
+    - I want the first option 
+    - Option B
+    - I want option B 
+    - Option B sounds good
+    - I choose option B
+    - Let's book a table for restaurant B 
+    - I want the second option 
+    - Option C 
+    - I want option C
+    - Option C sounds good
+    - I choose option C
+    - Let's book a table for restaurant C 
+    - I want the third option 
+
 
 - intent: provide_time
   examples: |
-    - [7pm](time)
-    - around [8 o'clock](time)
-    - [6:30pm](time)
-    - how about [7:30](time)
-    - [9pm](time) works for me
-    - let's say [8pm](time)
+    - 7pm
+    - At 7pm
+    - At 7 in the evening
+    - At 7 o'clock
+    - Around 7
+    - 7 would be Great
+    - 7 works for me 
+    - lets do 7pm
+    - how about 7
+    - Is there something free for 7pm?
+  
+- intent: provide_date
+  examples: |
+    - next Monday
+    - On Monday
+    - I want to book a table for next Monday
+    - For the upcoming Monday 
+    - Monday next week 
+    - Please make a reservation for next Monday
+    - Monday
+    - What about Monday
+    - Let's do Monday 
+
+- intent: provide_party_size
+  examples: |
+    - a table for one
+    - please make a reservation for one person
+    - its just me
+    - one person
+    - two 
+    - there are two of us
+    - for two
+    - a table for two please
+    - there will be two of us
+    - three 
+    - there are three of us
+    - for three
+    - a table for three please
+    - there will be three of us
+    - four 
+    - there are four of us
+    - for four
+    - a table for four please
+    - there will be four of us
+    - five 
+    - there are five of us
+    - for five
+    - a table for five please
+    - there will be five of us
+    - six 
+    - there are six of us
+    - for six
+    - a table for six please
+    - there will be six of us
+
+- intent: choose_own_restaurant
+  examples: |
+    - I have a place in mind
+    - I know where I want to eat
+    - I know a restaurant
+    - I know a place
+    - I already know where I want to eat
+    - I already have a place in mind
+    - I want to eat at a specific restaurant
+    - I want to eat at a place I know 
+    - I don't need a recommendation
+    - I don't need advice 
+    - I want to book a restaurant
+    - I want to make a reservation 
+
+- intent: provide_restaurant_name
+  examples: |
+    - It's called XXXX
+    - The name is XXXX
+    - XXXXX
+    - I want to eat at XXXX
+    - I want to book a table at XXXX
+    - The place is called XXXX
+    - The restaurant is called XXXX
+    - The restaurants name is XXXXX
 
 - intent: confirm_booking
   examples: |
@@ -70,17 +275,22 @@ nlu:
     - go ahead and confirm
     - yes, book the table
     - confirm the reservation
+    - yes please
+    - yes, thank you
 
-- intent: bot_challenge
+- intent: restart
   examples: |
-    - are you a bot?
-    - am I talking to a human?
-    - is this an AI?
-    - are you real?
+    - stop
+    - restart 
+    - cancel everything
+    - I want to restart
+    - I changed my mind, please restart
+    - I changed my mind 
+    - I want to go back to the beginning
+    - Go to the beginning
+    - Lets start again 
+    - Lets start fresh
+    - I want to do another booking
+    - I want another recommendation
+    - I want to do something else
 
-- intent: out_of_scope
-  examples: |
-    - what's the weather like?
-    - tell me a joke
-    - what's your favorite movie?
-    - can you help me with my homework?

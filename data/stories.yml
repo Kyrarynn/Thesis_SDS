@@ -2,138 +2,146 @@ version: "3.1"
 
 stories:
 
-# ============================================================
-# PATH A — Recommendation → Booking
-# ============================================================
+# # ============================================================
+# # PATH A — Recommendation → Booking
+# # ============================================================
 
 - story: recommendation path - happy path
   steps:
     - intent: greet
     - action: utter_greet
-    - intent: want_recommendation
-    - action: action_set_dialog_path        # sets dialog_path = "recommendation"
+    - intent: choose_recommendation_path
+    - active_loop: recommendation_loop
+    - action: action_set_dialog_path          # sets dialog_path = "recommendation"
     - action: utter_ask_district
-    - intent: inform
-      entities:
-        - district: "Mitte"
+    - intent: provide_district
     - action: utter_ask_cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Italian"
-    - action: action_give_recommendations   # returns list, sets restaurant_name slot on choice
-    - intent: affirm
+    - intent: provide_cuisine
+    - action: utter_ask_food_preference
+    - intent: provide_food_preference
+    - action: utter_give_recommendations
+    - intent: choose_recommendation
     - action: utter_confirm_recommendation_choice
     - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
     - active_loop: null
-    - action: action_handle_booking         # checks system_version slot; injects difficulty if B
+    - active_loop: booking_loop
+    - action: utter_ask_num_people
+    - intetn: provide_party_size
+    - action: utter_ask_date
+    - intent: provie_date
+    - action: utter_ask_time
+    - intent: provide_time
+    - action: utter_confirm_booking
     - intent: affirm
+    - active_loop: null
     - action: utter_booking_confirmed
+    - action: utter_ask_restart
 
-- story: recommendation path - user denies recommendation list
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: want_recommendation
-    - action: action_set_dialog_path
-    - action: utter_ask_district
-    - intent: inform
-      entities:
-        - district: "Prenzlauer Berg"
-    - action: utter_ask_cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Thai"
-    - action: action_give_recommendations
-    - intent: deny                          # user doesn't like the suggestions
-    - action: utter_ask_cuisine             # re-ask with different cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Japanese"
-    - action: action_give_recommendations
-    - intent: affirm
-    - action: utter_confirm_recommendation_choice
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
 
-- story: recommendation path - user denies final booking confirmation
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: want_recommendation
-    - action: action_set_dialog_path
-    - action: utter_ask_district
-    - intent: inform
-      entities:
-        - district: "Kreuzberg"
-    - action: utter_ask_cuisine
-    - intent: inform
-      entities:
-        - cuisine: "Vietnamese"
-    - action: action_give_recommendations
-    - intent: affirm
-    - action: utter_confirm_recommendation_choice
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: deny                          # user rejects final confirmation
-    - action: utter_booking_cancelled
 
-# ============================================================
-# PATH B — Direct Booking (no recommendation)
-# ============================================================
+# - story: recommendation path - user denies recommendation list
+#   steps:
+#     - intent: greet
+#     - action: utter_greet
+#     - intent: want_recommendation
+#     - action: action_set_dialog_path
+#     - action: utter_ask_district
+#     - intent: inform
+#       entities:
+#         - district: "Prenzlauer Berg"
+#     - action: utter_ask_cuisine
+#     - intent: inform
+#       entities:
+#         - cuisine: "Thai"
+#     - action: action_give_recommendations
+#     - intent: deny                          # user doesn't like the suggestions
+#     - action: utter_ask_cuisine             # re-ask with different cuisine
+#     - intent: inform
+#       entities:
+#         - cuisine: "Japanese"
+#     - action: action_give_recommendations
+#     - intent: affirm
+#     - action: utter_confirm_recommendation_choice
+#     - intent: affirm
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: affirm
+#     - action: utter_booking_confirmed
 
-- story: direct booking path - happy path
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: want_booking
-    - action: action_set_dialog_path        # sets dialog_path = "direct_booking"
-    - action: utter_ask_restaurant_name
-    - intent: inform
-      entities:
-        - restaurant_name: "Sushi Place"
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking         # System B: difficulty injected here
-    - intent: affirm
-    - action: utter_booking_confirmed
+# - story: recommendation path - user denies final booking confirmation
+#   steps:
+#     - intent: greet
+#     - action: utter_greet
+#     - intent: want_recommendation
+#     - action: action_set_dialog_path
+#     - action: utter_ask_district
+#     - intent: inform
+#       entities:
+#         - district: "Kreuzberg"
+#     - action: utter_ask_cuisine
+#     - intent: inform
+#       entities:
+#         - cuisine: "Vietnamese"
+#     - action: action_give_recommendations
+#     - intent: affirm
+#     - action: utter_confirm_recommendation_choice
+#     - intent: affirm
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: deny                          # user rejects final confirmation
+#     - action: utter_booking_cancelled
 
-- story: direct booking path - user denies booking confirmation
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: want_booking
-    - action: action_set_dialog_path
-    - action: utter_ask_restaurant_name
-    - intent: inform
-      entities:
-        - restaurant_name: "Burger Bar"
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: deny
-    - action: utter_booking_cancelled
+# # ============================================================
+# # PATH B — Direct Booking (no recommendation)
+# # ============================================================
 
-- story: direct booking path - user provides restaurant upfront
-  steps:
-    - intent: want_booking
-      entities:
-        - restaurant_name: "Trattoria Roma"
-    - action: action_set_dialog_path
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
+# - story: direct booking path - happy path
+#   steps:
+#     - intent: greet
+#     - action: utter_greet
+#     - intent: want_booking
+#     - action: action_set_dialog_path        # sets dialog_path = "direct_booking"
+#     - action: utter_ask_restaurant_name
+#     - intent: inform
+#       entities:
+#         - restaurant_name: "Sushi Place"
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking         # System B: difficulty injected here
+#     - intent: affirm
+#     - action: utter_booking_confirmed
+
+# - story: direct booking path - user denies booking confirmation
+#   steps:
+#     - intent: greet
+#     - action: utter_greet
+#     - intent: want_booking
+#     - action: action_set_dialog_path
+#     - action: utter_ask_restaurant_name
+#     - intent: inform
+#       entities:
+#         - restaurant_name: "Burger Bar"
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: deny
+#     - action: utter_booking_cancelled
+
+# - story: direct booking path - user provides restaurant upfront
+#   steps:
+#     - intent: want_booking
+#       entities:
+#         - restaurant_name: "Trattoria Roma"
+#     - action: action_set_dialog_path
+#     - action: booking_form
+#     - active_loop: booking_form
+#     - active_loop: null
+#     - action: action_handle_booking
+#     - intent: affirm
+#     - action: utter_booking_confirmed
