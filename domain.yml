@@ -6,6 +6,7 @@ intents:
   - affirm
   - deny
   - restart
+  - stop
   - choose_recommendation_path
   - provide_district
   - provide_cuisine
@@ -110,7 +111,6 @@ responses:
   utter_ask_restaurant_name:
     - text: "Got it. Which restaurant would you like to book? Please tell me the name."
 
-
   utter_ask_district:
     - text: "Let me ask some questions to get a feel for your preferences. Which district are you looking in?"
 
@@ -119,9 +119,6 @@ responses:
   
   utter_ask_food_preference:
     - text: "One last question: Do you have specific food preferences? For example, would you like a place with vegan or gluten free options."
-
-  utter_give_recommendations:
-    - text: "Here are some options based on your preferences: [Restaurant A], [Restaurant B], [Restaurant C]. Would you like to book one of these?"
 
   utter_confirm_recommendation_choice:
     - text: "Great choice! Shall we proceed to booking a table?"
@@ -150,6 +147,9 @@ responses:
   # System B difficulty injections (stubs — flesh out in custom actions)
   utter_booking_error_system_b:
     - text: "I'm sorry, I'm having trouble processing that. Could you repeat the date?"
+
+  utter_goodbye:
+    - text: "Bye! Have a great day!"
 
 actions:
   - action_set_dialog_path

@@ -1,3 +1,5 @@
+
+
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import SlotSet
@@ -10,8 +12,9 @@ logger = logging.getLogger(__name__)
 class ActionSetDialogPath(Action):
     """
     Called immediately after the user chooses recommendation vs. direct booking.
-    Sets the dialog_path slot so downstream actions (and your analysis) know
-    which branch was taken.
+    Sets the dialog_path slot.
+    Used to track, what path was taken: recommendation or direct booking. 
+    Usefull for evaluation. 
     """
 
     def name(self) -> Text:
@@ -26,9 +29,9 @@ class ActionSetDialogPath(Action):
 
         last_intent = tracker.latest_message.get("intent", {}).get("name")
 
-        if last_intent == "want_recommendation":
+        if last_intent == "choose_recommendation_path":
             path = "recommendation"
-        elif last_intent == "want_booking":
+        elif last_intent == "choose_own_restaurant":
             path = "direct_booking"
         else:
             path = "direct_booking"  # safe fallback
@@ -39,7 +42,9 @@ class ActionSetDialogPath(Action):
 
 class ActionGiveRecommendations(Action):
     """
-    Returns a list of restaurant recommendations based on district + cuisine slots.
+    Returns a list of restaurant recommendations based on district + cuisine + preference slots.
+    
+    TO DO:
     Replace the stub list with a real lookup (DB, API, etc.) when ready.
     """
 
@@ -53,21 +58,22 @@ class ActionGiveRecommendations(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
 
-        district = tracker.get_slot("district") or "your area"
-        cuisine = tracker.get_slot("cuisine") or "various cuisines"
+        district = tracker.get_slot("district") or "Spandau"
+        cuisine = tracker.get_slot("cuisine") or "Japanese"
+        preference = tracker.get_slot("food_preference") or "vegetarian"
 
-        # --- STUB: replace with real restaurant data ---
+        # --- STUB: TO-DO: replace with real restaurant data ---
         recommendations = [
-            "Restaurant Alpha",
-            "Restaurant Beta",
-            "Restaurant Gamma",
+            "Alpha Mouse Cheese Palace",
+            "Beta Test Food Creations",
+            "Gamma Grandma Cooking",
         ]
         # ------------------------------------------------
 
         rec_list = ", ".join(recommendations)
         dispatcher.utter_message(
             text=(
-                f"Here are some {cuisine} restaurants in {district}: "
+                f"Here are some {preference} {cuisine} restaurants in {district}: "
                 f"{rec_list}. Would you like to book one of these?"
             )
         )

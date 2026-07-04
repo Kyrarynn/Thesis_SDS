@@ -8,30 +8,39 @@ rules:
       - active_loop: null
       - action: utter_ask_restart
 
-
-
-  # Activate booking form whenever required slots are missing
-  - rule: activate booking form
-    condition:
-      - active_loop: null
-    steps:
-      - intent: want_booking
-      - action: booking_form
-      - active_loop: booking_form
-
-  # Keep form active while slots are being filled
-  - rule: submit booking form
-    condition:
-      - active_loop: booking_form
-    steps:
-      - action: booking_form
-      - active_loop: null
-      - action: action_handle_booking
-
   # Hard stop / cancel at any point
   - rule: user stops dialog
     steps:
       - intent: stop
       - action: utter_booking_cancelled
-      - action: action_deactivate_loop
       - active_loop: null
+
+# Say goodbye
+  - rule: say goodbye when user does so 
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+      - active_loop: null
+
+
+
+
+  # # Activate booking form whenever required slots are missing
+  # - rule: activate booking form
+  #   condition:
+  #     - active_loop: null
+  #   steps:
+  #     - intent: want_booking
+  #     - action: booking_form
+  #     - active_loop: booking_form
+
+  # # Keep form active while slots are being filled
+  # - rule: submit booking form
+  #   condition:
+  #     - active_loop: booking_form
+  #   steps:
+  #     - action: booking_form
+  #     - active_loop: null
+  #     - action: action_handle_booking
+
+

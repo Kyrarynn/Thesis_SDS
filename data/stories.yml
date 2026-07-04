@@ -19,20 +19,20 @@ stories:
     - intent: provide_cuisine
     - action: utter_ask_food_preference
     - intent: provide_food_preference
-    - action: utter_give_recommendations
+    - action: action_give_recommendations
     - intent: choose_recommendation
     - action: utter_confirm_recommendation_choice
     - intent: affirm
     - active_loop: null
     - active_loop: booking_loop
     - action: utter_ask_num_people
-    - intetn: provide_party_size
+    - intent: provide_party_size
     - action: utter_ask_date
-    - intent: provie_date
+    - intent: provide_date
     - action: utter_ask_time
     - intent: provide_time
     - action: utter_confirm_booking
-    - intent: affirm
+    - intent: confirm_booking
     - active_loop: null
     - action: utter_booking_confirmed
     - action: utter_ask_restart
