@@ -15,7 +15,6 @@ intents:
   - provide_party_size
   - provide_date
   - provide_time
-  - confirm_booking
   - choose_own_restaurant
   - provide_restaurant_name
   
@@ -45,18 +44,27 @@ slots:
     mappings:
       - type: from_entity
         entity: district
+        conditions:
+          - active_loop: recommendation_form
+            requested_slot: district
 
   food_preference:
     type: text
     mappings:
       - type: from_entity
         entity: food_preference
+        conditions:
+          - active_loop: recommendation_form
+            requested_slot: food_preference
 
   cuisine:
     type: text
     mappings:
       - type: from_entity
         entity: cuisine
+        conditions:
+          - active_loop: recommendation_form
+            requested_slot: cuisine
 
   restaurant_name:
     type: text
@@ -69,18 +77,27 @@ slots:
     mappings:
       - type: from_entity
         entity: time
+        conditions:
+          - active_loop: booking_form
+            requested_slot: time
 
   date:
     type: text
     mappings:
       - type: from_entity
         entity: date
+        conditions:
+          - active_loop: booking_form
+            requested_slot: date
 
   num_people:
     type: float
     mappings:
       - type: from_entity
         entity: num_people
+        conditions:
+          - active_loop: booking_form
+            requested_slot: num_people
 
   # System A/B condition assigned at session start by FastAPI
   system_version:

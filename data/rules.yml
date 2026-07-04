@@ -2,11 +2,11 @@ version: "3.1"
 
 rules:
 
-  - rule: restart at any point
-    steps: 
-      - intent: restart
-      - active_loop: null
-      - action: utter_ask_restart
+  # - rule: restart at any point
+  #   steps: 
+  #     - intent: restart
+  #     - active_loop: null
+  #     - action: utter_ask_restart
 
   # Hard stop / cancel at any point
   - rule: user stops dialog
@@ -14,6 +14,7 @@ rules:
       - intent: stop
       - action: utter_booking_cancelled
       - active_loop: null
+#       - action: utter_ask_restart
 
 # Say goodbye
   - rule: say goodbye when user does so 

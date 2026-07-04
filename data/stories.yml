@@ -11,7 +11,7 @@ stories:
     - intent: greet
     - action: utter_greet
     - intent: choose_recommendation_path
-    - active_loop: recommendation_loop
+    - active_loop: recommendation_form
     - action: action_set_dialog_path          # sets dialog_path = "recommendation"
     - action: utter_ask_district
     - intent: provide_district
@@ -24,7 +24,7 @@ stories:
     - action: utter_confirm_recommendation_choice
     - intent: affirm
     - active_loop: null
-    - active_loop: booking_loop
+    - active_loop: booking_form
     - action: utter_ask_num_people
     - intent: provide_party_size
     - action: utter_ask_date
@@ -32,7 +32,7 @@ stories:
     - action: utter_ask_time
     - intent: provide_time
     - action: utter_confirm_booking
-    - intent: confirm_booking
+    - intent: affirm
     - active_loop: null
     - action: utter_booking_confirmed
     - action: utter_ask_restart

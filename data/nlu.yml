@@ -52,6 +52,15 @@ nlu:
     - you made a mistake
     - no, there is a mistake
 
+- intent: stop  
+  examples: |
+    - stop
+    - break
+    - Stop what you are doing 
+    - Hold up 
+    - No, stop please 
+    - Stop please 
+    - Stop what you are doing 
 
 - intent: choose_recommendation_path
   examples: |
@@ -267,15 +276,6 @@ nlu:
     - The place is called XXXX
     - The restaurant is called XXXX
     - The restaurants name is XXXXX
-
-- intent: confirm_booking
-  examples: |
-    - please book it
-    - go ahead and confirm
-    - yes, book the table
-    - confirm the reservation
-    - yes please
-    - yes, thank you
 
 - intent: restart
   examples: |
