@@ -40,6 +40,51 @@ class ActionSetDialogPath(Action):
         return [SlotSet("dialog_path", path)]
 
 
+class ActionConfirmRestaurantName(Action):
+    """
+    Asks for the restaurant name and confirms. 
+    If the name is wrong, the systems will ask again.
+
+    TO DO:
+    - Programm set system difficulties to measure UX variance. 
+    """
+
+    def name(self) -> Text:
+        return "action_confirm_restaurant_name"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+
+        awaiting_confirmation = tracker.get_slot("awaiting_restaurant_confirmation")
+        last_intent = tracker.latest_message.get("intent", {}).get("name")
+
+        if awaiting_confirmation and last_intent == "deny":
+            # User said no — clear the slot and ask again
+            dispatcher.utter_message(text="My apologies! What is the correct restaurant name?")
+            return [
+                SlotSet("restaurant_name", None),
+                SlotSet("awaiting_restaurant_confirmation", False),
+            ]
+
+        # Either first visit, or user just provided/updated the name
+        restaurant_name = tracker.get_slot("restaurant_name")
+
+        if not restaurant_name:
+            dispatcher.utter_message(text="Which restaurant would you like to book?")
+            return [SlotSet("awaiting_restaurant_confirmation", False)]
+        
+        # Name is filled — ask for confirmation
+        dispatcher.utter_message(
+            text=f"You want to eat at {restaurant_name}, is that correct?"
+        )
+        return [SlotSet("awaiting_restaurant_confirmation", True)]
+
+
+
 class ActionGiveRecommendations(Action):
     """
     Returns a list of restaurant recommendations based on district + cuisine + preference slots.

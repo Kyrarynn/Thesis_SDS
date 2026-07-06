@@ -65,6 +65,7 @@ nlu:
 - intent: choose_recommendation_path
   examples: |
     - I want a recommendation
+    - I need a recommendation
     - Give me a recommendation
     - Recommend me something
     - A recommendations sounds good
@@ -74,6 +75,12 @@ nlu:
     - I don't have a place in mind.
     - I don't know where I want to eat
     - I am unsure where to eat
+    - Recommendation please
+    - A recommendation
+    - Recommendation
+    - A recommendation would be great
+    - Please recommend me something 
+    - Recommend me something 
 
 - intent: provide_district
   examples: |

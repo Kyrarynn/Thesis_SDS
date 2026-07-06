@@ -119,6 +119,11 @@ slots:
         intent: deny
         value: false
 
+  awaiting_restaurant_confirmation:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: custom
 
 
 responses:
@@ -173,6 +178,7 @@ actions:
   - action_handle_booking
   - action_give_recommendations
   - validate_booking_form
+  - action_confirm_restaurant_name
 
 forms:
   booking_form:
