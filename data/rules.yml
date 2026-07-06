@@ -8,13 +8,20 @@ rules:
   #     - active_loop: null
   #     - action: utter_ask_restart
 
-  # Hard stop / cancel at any point
-  - rule: user stops dialog
+
+# greets user / start of conversation
+  - rule: greet user
+    steps:
+      - intent: greet
+      - action: utter_greet
+
+# Hard stop / cancel at any point
+  - rule: user stops
     steps:
       - intent: stop
-      - action: utter_booking_cancelled
+      - action: action_deactivate_loop
       - active_loop: null
-#       - action: utter_ask_restart
+      - action: utter_goodbye
 
 # Say goodbye
   - rule: say goodbye when user does so 
@@ -24,24 +31,88 @@ rules:
       - active_loop: null
 
 
+####################################
+# recommendation path: 
+####################################
+
+  - rule: start recommendation path
+    steps:
+      - intent: choose_recommendation_path
+      - action: action_set_dialog_path
+      - action: recommendation_form
+      - active_loop: recommendation_form
+ 
+  - rule: submit recommendation form
+    condition:
+      - active_loop: recommendation_form
+    steps:
+      - action: recommendation_form
+      - active_loop: null
+      - action: action_give_recommendations
+ 
+  - rule: user confirms recommendation choice
+    steps:
+      - intent: choose_recommendation
+      - action: utter_confirm_recommendation_choice
+      - action: booking_form
+      - active_loop: booking_form
 
 
-  # # Activate booking form whenever required slots are missing
-  # - rule: activate booking form
-  #   condition:
-  #     - active_loop: null
-  #   steps:
-  #     - intent: want_booking
-  #     - action: booking_form
-  #     - active_loop: booking_form
+####################################
+# direct booking path: 
+####################################
 
-  # # Keep form active while slots are being filled
-  # - rule: submit booking form
-  #   condition:
-  #     - active_loop: booking_form
-  #   steps:
-  #     - action: booking_form
-  #     - active_loop: null
-  #     - action: action_handle_booking
+  - rule: start direct booking path
+    steps:
+      - intent: choose_own_restaurant
+      - action: action_set_dialog_path
+      - action: action_confirm_restaurant_name
+ 
+  - rule: user provides restaurant name
+    steps:
+      - intent: provide_restaurant_name
+      - action: action_confirm_restaurant_name
+ 
+  - rule: user affirms restaurant name
+    steps:
+      - intent: affirm
+      - action: booking_form
+      - active_loop: booking_form
+ 
+  - rule: user denies restaurant name
+    steps:
+      - intent: deny
+      - action: action_confirm_restaurant_name
+
+
+####################################
+# booking form - both paths: 
+####################################
+
+  - rule: submit booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - action: booking_form
+      - active_loop: null
+      - action: action_handle_booking
+ 
+  - rule: user affirms booking confirmation
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: affirm
+      - action: utter_booking_confirmed
+      - action: utter_ask_restart
+ 
+  - rule: user denies booking confirmation
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: deny
+      - action: utter_booking_cancelled
+
+
+
 
 

@@ -35,7 +35,7 @@ slots:
       - recommendation
       - direct_booking
     initial_value: null
-    influence_conversation: true
+    # influence_conversation: true
     mappings:
       - type: custom
 
@@ -44,27 +44,18 @@ slots:
     mappings:
       - type: from_entity
         entity: district
-        conditions:
-          - active_loop: recommendation_form
-            requested_slot: district
 
   food_preference:
     type: text
     mappings:
       - type: from_entity
         entity: food_preference
-        conditions:
-          - active_loop: recommendation_form
-            requested_slot: food_preference
 
   cuisine:
     type: text
     mappings:
       - type: from_entity
         entity: cuisine
-        conditions:
-          - active_loop: recommendation_form
-            requested_slot: cuisine
 
   restaurant_name:
     type: text
@@ -77,27 +68,18 @@ slots:
     mappings:
       - type: from_entity
         entity: time
-        conditions:
-          - active_loop: booking_form
-            requested_slot: time
 
   date:
     type: text
     mappings:
       - type: from_entity
         entity: date
-        conditions:
-          - active_loop: booking_form
-            requested_slot: date
 
   num_people:
     type: float
     mappings:
       - type: from_entity
         entity: num_people
-        conditions:
-          - active_loop: booking_form
-            requested_slot: num_people
 
   # System A/B condition assigned at session start by FastAPI
   system_version:
@@ -109,15 +91,15 @@ slots:
     mappings:
       - type: custom
   
-  confirmation:
-    type: bool
-    mappings:
-      - type: from_intent
-        intent: affirm
-        value: true
-      - type: from_intent
-        intent: deny
-        value: false
+  # confirmation:
+  #   type: bool
+  #   mappings:
+  #     - type: from_intent
+  #       intent: affirm
+  #       value: true
+  #     - type: from_intent
+  #       intent: deny
+  #       value: false
 
   awaiting_restaurant_confirmation:
     type: bool
@@ -175,10 +157,11 @@ responses:
 
 actions:
   - action_set_dialog_path
-  - action_handle_booking
   - action_give_recommendations
-  - validate_booking_form
   - action_confirm_restaurant_name
+  - action_handle_booking
+  - validate_booking_form
+  - validate_recommendation_form
 
 forms:
   booking_form:
@@ -191,5 +174,5 @@ forms:
   recommendation_form:
     required_slots:
       - district
-      - food_preference
       - cuisine
+      - food_preference

@@ -2,90 +2,40 @@ version: "3.1"
 
 stories:
 
-# ============================================================
-# PATH A — Recommendation → Booking
-# ============================================================
+#   - story: recommendation path end to end
+#     steps:
+#       - intent: greet
+#       - action: utter_greet
+#       - intent: choose_recommendation_path
+#       - action: action_set_dialog_path
+#       - action: recommendation_form
+#       - active_loop: recommendation_form
+#       - active_loop: null
+#       - action: action_give_recommendations
+#       - intent: choose_recommendation
+#       - action: utter_confirm_recommendation_choice
+#       - action: booking_form
+#       - active_loop: booking_form
+#       - active_loop: null
+#       - action: action_handle_booking
+#       - intent: affirm
+#       - action: utter_booking_confirmed
+#       - action: utter_ask_restart
 
-- story: recommendation path - happy path 
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: choose_recommendation_path
-    - action: action_set_dialog_path          # sets dialog_path = "recommendation"
-    - action: recommendation_form
-    - active_loop: recommendation_form
-    - active_loop: null
-    # - action: utter_ask_district
-    # - intent: provide_district
-    # - action: utter_ask_cuisine
-    # - intent: provide_cuisine
-    # - action: utter_ask_food_preference
-    # - intent: provide_food_preference
-    - action: action_give_recommendations
-    - intent: choose_recommendation
-    - action: utter_confirm_recommendation_choice
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    # - action: utter_ask_num_people
-    # - intent: provide_party_size
-    # - action: utter_ask_date
-    # - intent: provide_date
-    # - action: utter_ask_time
-    # - intent: provide_time
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
-    - action: utter_ask_restart
-
-#####################################
-# direct booking
-#####################################
-
-# version 1
-
-- story: direct booking path - happy path
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: choose_own_restaurant
-    - action: action_set_dialog_path
-    - action: action_confirm_restaurant_name    # asks for name
-    - intent: provide_restaurant_name
-    - action: action_confirm_restaurant_name    # confirms: "You want X, correct?"
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
-    - action: utter_ask_restart
-
-
-# Version 2
-
-- story: direct booking path - user denies restaurant name
-  steps:
-    - intent: greet
-    - action: utter_greet
-    - intent: choose_own_restaurant
-    - action: action_set_dialog_path
-    - action: action_confirm_restaurant_name    # asks for name
-    - intent: provide_restaurant_name
-    - action: action_confirm_restaurant_name    # confirms: "You want X, correct?"
-    - intent: deny                              # user says wrong name
-    - action: action_confirm_restaurant_name    # asks again
-    - intent: provide_restaurant_name
-    - action: action_confirm_restaurant_name    # confirms again
-    - intent: affirm
-    - action: booking_form
-    - active_loop: booking_form
-    - active_loop: null
-    - action: action_handle_booking
-    - intent: affirm
-    - action: utter_booking_confirmed
-    - action: utter_ask_restart
-
-
+#   - story: direct booking path end to end
+#     steps:
+#       - intent: greet
+#       - action: utter_greet
+#       - intent: choose_own_restaurant
+#       - action: action_set_dialog_path
+#       - action: action_confirm_restaurant_name
+#       - intent: provide_restaurant_name
+#       - action: action_confirm_restaurant_name
+#       - intent: affirm
+#       - action: booking_form
+#       - active_loop: booking_form
+#       - active_loop: null
+#       - action: action_handle_booking
+#       - intent: affirm
+#       - action: utter_booking_confirmed
+#       - action: utter_ask_restart
