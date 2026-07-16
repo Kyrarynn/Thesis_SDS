@@ -2,20 +2,6 @@ version: "3.1"
 
 rules: 
 
-  # - rule: restart at any point
-  #   steps: 
-  #     - intent: restart
-  #     - active_loop: null
-  #     - action: utter_ask_restart
-
-# # Hard stop / cancel at any point
-#   - rule: user stops
-#     steps:
-#       - intent: stop
-#       - action: action_deactivate_loop
-#       - active_loop: null
-#       - action: utter_goodbye
-
   # ============================================================
   # ENTRY POINT
   # ============================================================
@@ -118,9 +104,16 @@ rules:
   # GLOBAL — stop at any point
   # ============================================================
  
-  - rule: user stops
+  - rule: user goodbye
     steps:
-      - intent: stop
+      - intent: goodbye
       - action: action_deactivate_loop
       - active_loop: null
       - action: utter_goodbye
+  
+  # - rule: restart at any point
+  #   steps: 
+  #     - intent: restart
+  #     - action: action_deactivate_loop
+  #     - active_loop: null
+  #     - action: utter_ask_restart

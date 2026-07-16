@@ -29,6 +29,13 @@ nlu:
     - see you
     - end session
     - exit
+    - stop
+    - break
+    - Stop what you are doing 
+    - Hold up 
+    - No, stop please 
+    - Stop please 
+    - Stop what you are doing
 
 - intent: affirm
   examples: |
@@ -56,16 +63,7 @@ nlu:
     - no you didn't understand that correctly
     - you made a mistake
     - no, there is a mistake
-
-- intent: stop  
-  examples: |
-    - stop
-    - break
-    - Stop what you are doing 
-    - Hold up 
-    - No, stop please 
-    - Stop please 
-    - Stop what you are doing  
+ 
 
 #########################################
 # logic intents
