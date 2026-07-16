@@ -1,0 +1,52 @@
+[
+  {
+    "tag_name": "entity",
+    "ids_to_tags": {
+      "1": "B-cuisine",
+      "2": "I-cuisine",
+      "3": "L-cuisine",
+      "4": "U-cuisine",
+      "5": "B-district",
+      "6": "I-district",
+      "7": "L-district",
+      "8": "U-district",
+      "9": "B-food_preference",
+      "10": "I-food_preference",
+      "11": "L-food_preference",
+      "12": "U-food_preference",
+      "13": "B-num_people",
+      "14": "I-num_people",
+      "15": "L-num_people",
+      "16": "U-num_people",
+      "17": "B-time",
+      "18": "I-time",
+      "19": "L-time",
+      "20": "U-time",
+      "0": "O"
+    },
+    "tags_to_ids": {
+      "B-cuisine": 1,
+      "I-cuisine": 2,
+      "L-cuisine": 3,
+      "U-cuisine": 4,
+      "B-district": 5,
+      "I-district": 6,
+      "L-district": 7,
+      "U-district": 8,
+      "B-food_preference": 9,
+      "I-food_preference": 10,
+      "L-food_preference": 11,
+      "U-food_preference": 12,
+      "B-num_people": 13,
+      "I-num_people": 14,
+      "L-num_people": 15,
+      "U-num_people": 16,
+      "B-time": 17,
+      "I-time": 18,
+      "L-time": 19,
+      "U-time": 20,
+      "O": 0
+    },
+    "num_tags": 21
+  }
+]

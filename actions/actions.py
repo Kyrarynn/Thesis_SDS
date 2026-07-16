@@ -123,8 +123,13 @@ class ValidateBookingForm(FormValidationAction):
         tracker: Tracker,
         domain: DomainDict,
     ) -> Dict[Text, Any]:
+    # Use entity value if extracted, otherwise fall back to raw text
         if slot_value:
             return {"date": slot_value}
+        # Fallback: use whatever the user said directly
+        raw_text = tracker.latest_message.get("text", "").strip()
+        if raw_text:
+            return {"date": raw_text}
         dispatcher.utter_message(text="I didn't catch the date. Could you repeat it?")
         return {"date": None}
 
@@ -137,6 +142,9 @@ class ValidateBookingForm(FormValidationAction):
     ) -> Dict[Text, Any]:
         if slot_value:
             return {"time": slot_value}
+        raw_text = tracker.latest_message.get("text", "").strip()
+        if raw_text:
+            return {"time": raw_text}
         dispatcher.utter_message(text="I didn't catch the time. Could you say it again?")
         return {"time": None}
 

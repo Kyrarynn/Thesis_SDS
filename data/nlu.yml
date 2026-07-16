@@ -1,6 +1,11 @@
 version: "3.1"
 
 nlu:
+
+#########################################
+# base intents
+#########################################
+
 - intent: greet
   examples: |
     - hi
@@ -61,6 +66,10 @@ nlu:
     - No, stop please 
     - Stop please 
     - Stop what you are doing  
+
+#########################################
+# logic intents
+#########################################
 
 - intent: choose_recommendation_path
   examples: |
@@ -269,18 +278,98 @@ nlu:
     - lets do [7](time)
     - how about [7](time)
     - Is there something free for [7](time)?
+    - [6](time)
+    - At [6](time)
+    - At [6](time) in the evening
+    - At [6](time) o'clock
+    - Around [6](time)
+    - [6](time) would be great
+    - [6](time) works for me 
+    - lets do [6](time)
+    - how about [6](time)
+    - Is there something free for [6](time)?
+    - [5](time)
+    - At [5](time)
+    - At [5](time) in the evening
+    - At [5](time) o'clock
+    - Around [5](time)
+    - [5](time) would be great
+    - [5](time) works for me 
+    - lets do [5](time)
+    - how about [5](time)
+    - Is there something free for [5](time)?
+    - [7pm](time)
+    - [19:00](time)
+    - [8 o'clock](time)
+    - at [half past seven](time)
+    - [7:30](time)
+    - around [8pm](time)
+    - [20:00](time)
+    - at [7](time)
+    - [half past 8](time)
+    - [nine o'clock](time)
+    - [6:30 pm](time)
   
 - intent: provide_date
   examples: |
-    - next Monday
-    - On Monday
-    - I want to book a table for next Monday
-    - For the upcoming Monday 
-    - Monday next week 
-    - Please make a reservation for next Monday
-    - Monday
-    - What about Monday
-    - Let's do Monday 
+    - next [Monday](date)
+    - On [Monday](date)
+    - I want to book a table for next [Monday](date)
+    - For the upcoming [Monday](date) 
+    - [Monday](date) next week 
+    - Please make a reservation for next [Monday](date)
+    - [Monday](date)
+    - What about [Monday](date)
+    - Let's do [Monday](date)
+    - next [Tuesday](date)
+    - On [Tuesday](date)
+    - I want to book a table for next [Tuesday](date)
+    - For the upcoming [Tuesday](date) 
+    - [Tuesday](date) next week 
+    - Please make a reservation for next [Tuesday](date)
+    - [Tuesday](date)
+    - What about [Tuesday](date)
+    - Let's do [Tuesday](date)
+    - next [Wednesday](date)
+    - On [Wednesday](date)
+    - I want to book a table for next [Wednesday](date)
+    - For the upcoming [Wednesday](date) 
+    - [Wednesday](date) next week 
+    - Please make a reservation for next [Wednesday](date)
+    - [Wednesday](date)
+    - What about [Wednesday](date)
+    - Let's do [Wednesday](date)
+    - next [Thursday](date)
+    - On [Thursday](date)
+    - I want to book a table for next [Thursday](date)
+    - For the upcoming [Thursday](date) 
+    - [Thursday](date) next week 
+    - Please make a reservation for next [Thursday](date)
+    - [Thursday](date)
+    - What about [Thursday](date)
+    - Let's do [Thursday](date)
+    - next [Friday](date)
+    - On [Friday](date)
+    - I want to book a table for next [Friday](date)
+    - For the upcoming [Friday](date) 
+    - [Friday](date) next week 
+    - Please make a reservation for next [Friday](date)
+    - [Friday](date)
+    - What about [Friday](date)
+    - Let's do [Friday](date)
+    - [next monday](date)
+    - [tomorrow](date)
+    - [Friday](date)
+    - [next Saturday](date)
+    - [July 20th](date)
+    - on [Monday](date)
+    - [this weekend](date)
+    - [the 25th](date)
+    - [next week Friday](date)
+    - [21st of July](date)
+    - how about [Wednesday](date)
+    - [next Tuesday](date) works for me
+    - let's do [Saturday](date)
 
 - intent: provide_party_size
   examples: |
