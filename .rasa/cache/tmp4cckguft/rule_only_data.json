@@ -1,0 +1,9 @@
+{
+  "rule_only_slots": [
+    "awaiting_restaurant_confirmation"
+  ],
+  "rule_only_loops": [
+    "recommendation_form",
+    "booking_form"
+  ]
+}

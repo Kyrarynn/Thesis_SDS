@@ -6,7 +6,7 @@ stories:
 #     steps:
 #       - intent: greet
 #       - action: utter_greet
-#       - intent: choose_recommendation_path
+#       - intent: choose_recommendation_path 
 #       - action: action_set_dialog_path
 #       - action: recommendation_form
 #       - active_loop: recommendation_form

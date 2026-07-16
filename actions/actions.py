@@ -1,13 +1,44 @@
 
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
-from rasa_sdk.events import SlotSet
+from rasa_sdk.events import SlotSet, FollowupAction
 from rasa_sdk.forms import FormValidationAction
 from rasa_sdk.types import DomainDict
 from typing import Any, Dict, List, Text
 import logging
 
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# Conversation Start
+# ============================================================
+
+class ChooseYourPath(Action):
+    def name(self) -> Text:
+        return "choose_your_path"
+
+    def run(self, dispatcher, tracker, domain):
+        
+        dispatcher.utter_message(response="utter_greet")
+        dispatcher.utter_message(response="utter_ask_path")
+
+        path = tracker.get_slot("dialog_path")
+
+        if (path == "recommendation"):
+
+            # log path 
+            FollowupAction("start_direct_booking")
+        
+        elif (path == "direct_booking"):
+
+            # log path
+            FollowupAction("start_recommendation")
+
+        else:
+            dispatcher.utter_message(response="utter_ask_path_again")  
+
+        
+
 
 
 # ============================================================
@@ -53,9 +84,15 @@ class ValidateRecommendationForm(FormValidationAction):
         tracker: Tracker,
         domain: DomainDict,
     ) -> Dict[Text, Any]:
-        if slot_value and len(slot_value.strip()) > 1:
-            return {"food_preference": slot_value.strip()}
-        dispatcher.utter_message(text="Sorry, could you repeat that? What kind of food preference do you have?")
+    # Accept entity value if extracted, otherwise use raw text as fallback
+        if slot_value:
+            return {"food_preference": slot_value}
+        # Check raw text for "no preference" type responses
+        text = tracker.latest_message.get("text", "").lower()
+        no_pref_keywords = ["no preference", "don't care", "no", "not really", "none"]
+        if any(kw in text for kw in no_pref_keywords):
+            return {"food_preference": "none"}
+        dispatcher.utter_message(text="I didn't catch that. Do you have any dietary preferences, or no preference?")
         return {"food_preference": None}
 
 
@@ -155,43 +192,72 @@ class ActionSetDialogPath(Action):
 
 
 class ActionGiveRecommendations(Action):
-    """
-    Returns restaurant recommendations based on district + cuisine.
-    TODO: replace stub list with real data source.
-    """
 
     def name(self) -> Text:
         return "action_give_recommendations"
 
-    def run(
-        self,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: Dict[Text, Any],
-    ) -> List[Dict[Text, Any]]:
+    def run(self, dispatcher, tracker, domain):
+        district = tracker.get_slot("district") or "your area"
+        cuisine = tracker.get_slot("cuisine") or "various cuisines"
+        food_preference = tracker.get_slot("food_preference") or ""
 
-        district = tracker.get_slot("district") or "Mitte"
-        cuisine = tracker.get_slot("cuisine") or "Japanese"
-        food_preference = tracker.get_slot("food_preference") or "Vegan"
-
-        # --- STUB: replace with real restaurant data ---
+        # TO_DO — replace with real data
         recommendations = [
             "Alpha Mouse Cheese Palace",
             "Beta Test - Food Creation",
             "Gamma Grandma Cooking",
         ]
-        # -----------------------------------------------
 
-        rec_list = ", ".join(recommendations)
+        pref_str = f" {food_preference}" if food_preference and food_preference != "none" else ""
+        rec_list = "\n".join([f"  {i+1}. {r}" for i, r in enumerate(recommendations)])
+
         dispatcher.utter_message(
             text=(
-                f"Here are some {food_preference} {cuisine} restaurants in {district}: "
-                f"{rec_list}. Which one would you like?"
+                f"Here are some{pref_str} {cuisine} restaurants in {district}:\n"
+                f"{rec_list}\n"
+                f"Which one would you like? You can say the name or the number."
             )
         )
 
-        return []
+        # Stores recommendations in a slot so the choice action can look them up
+        return [SlotSet("recommendations", recommendations)]
 
+
+class ActionHandleRecommendationChoice(Action):
+
+    def name(self) -> Text:
+        return "action_handle_recommendation_choice"
+
+    def run(self, dispatcher, tracker, domain):
+        recommendations = tracker.get_slot("recommendations") or []
+        text = tracker.latest_message.get("text", "").lower()
+
+        chosen = None
+
+        # Try to match by number ("1", "option 1", "the first one")
+        number_map = {
+            "1": 0, "one": 0, "first": 0, "a": 0,
+            "2": 1, "two": 1, "second": 1, "b": 1,
+            "3": 2, "three": 2, "third": 2, "c": 2,
+        }
+        for keyword, index in number_map.items():
+            if keyword in text and index < len(recommendations):
+                chosen = recommendations[index]
+                break
+
+        # Try to match by name directly
+        if not chosen:
+            for rec in recommendations:
+                if rec.lower() in text:
+                    chosen = rec
+                    break
+
+        # Fallback to first option
+        if not chosen and recommendations:
+            chosen = recommendations[0]
+
+        logger.info(f"Recommendation chosen: {chosen}")
+        return [SlotSet("restaurant_name", chosen)]
 
 class ActionConfirmRestaurantName(Action):
     """

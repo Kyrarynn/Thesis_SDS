@@ -60,7 +60,7 @@ nlu:
     - Hold up 
     - No, stop please 
     - Stop please 
-    - Stop what you are doing 
+    - Stop what you are doing  
 
 - intent: choose_recommendation_path
   examples: |
@@ -84,98 +84,137 @@ nlu:
 
 - intent: provide_district
   examples: |
-    - Mitte
-    - Charlottenburg
-    - Steglitz
-    - Spandau
-    - Prenzlauer Berg
-    - Tempelhof
-    - Schöneberg
-    - Kreuzberg
-    - Pankow
-    - Hoppegarten
+    - [Mitte](district)
+    - [Charlottenburg](district)
+    - [Steglitz](district)
+    - [Spandau](district)
+    - [Prenzlauer Berg](district)
+    - [Tempelhof](district)
+    - [Schöneberg](district)
+    - [Kreuzberg](district)
+    - [Pankow](district)
+    - [Hoppegarten](district)
+    - I'm looking in [Mitte](district)
+    - somewhere in [Kreuzberg](district)
+    - in [Prenzlauer Berg](district)
 
 - intent: provide_cuisine
   examples: |
-    - Italian
-    - Italian please
-    - Italian sounds good
-    - I want to eat at a Italian place
-    - I am craving Italian food
-    - Italian food would be nice 
-    - German 
-    - German please
-    - German sounds good
-    - I want to eat at a German place
-    - I am craving German food
-    - German food would be nice 
-    - Thai
-    - Thai please
-    - Thai sounds good
-    - I want to eat at a Thai place
-    - I am craving Thai food
-    - Thai food would be nice 
-    - Japanese
-    - Japanese please
-    - Japanese sounds good
-    - I want to eat at a Japanese place
-    - I am craving Japanese food
-    - Japanese food would be nice 
-    - Chinese
-    - Chinese please
-    - Chinese sounds good
-    - I want to eat at a Chinese place
-    - I am craving Chinese food
-    - Chinese food would be nice 
-    - Indian
-    - Indian please
-    - Indian sounds good
-    - I want to eat at a Indian place
-    - I am craving Indian food
-    - Indian food would be nice 
-    - Mexican
-    - Mexican please
-    - Mexican sounds good
-    - I want to eat at a Mexican place
-    - I am craving Mexican food
-    - Mexican food would be nice 
-    - Greek
-    - Greek please
-    - Greek sounds good
-    - I want to eat at a Greek place
-    - I am craving Greek food
-    - Greek food would be nice 
+    - [Italian](cuisine)
+    - [Italian](cuisine) please
+    - [Italian](cuisine) sounds good
+    - I want to eat at an [Italian](cuisine) place
+    - I am craving [Italian](cuisine) food
+    - What about [Italian](cuisine)
+    - Maybe a [Italian](cuisine) place
+    - Look for [Italian](cuisine) restaurants please
+    - Lets do a [Italian](cuisine) restaurant
+    - [German](cuisine)
+    - [German](cuisine) please
+    - [German](cuisine) sounds good
+    - I want to eat at an [German](cuisine) place
+    - I am craving [German](cuisine) food
+    - What about [German](cuisine)
+    - Maybe a [German](cuisine) place
+    - Look for [German](cuisine) restaurants please
+    - Lets do a [German](cuisine) restaurant
+    - [Thai](cuisine)
+    - [Thai](cuisine) please
+    - [Thai](cuisine) sounds good
+    - I want to eat at an [Thai](cuisine) place
+    - I am craving [Thai](cuisine) food
+    - What about [Thai](cuisine)
+    - Maybe a [Thai](cuisine) place
+    - Look for [Thai](cuisine) restaurants please
+    - Lets do a [Thai](cuisine) restaurant
+    - [Japanese](cuisine)
+    - [Japanese](cuisine) please
+    - [Japanese](cuisine) sounds good
+    - I want to eat at an [Japanese](cuisine) place
+    - I am craving [Japanese](cuisine) food
+    - What about [Japanese](cuisine)
+    - Maybe a [Japanese](cuisine) place
+    - Look for [Japanese](cuisine) restaurants please
+    - Lets do a [Japanese](cuisine) restaurant
+    - [Japanese](cuisine) sounds good
+    - I am craving [Japanese](cuisine) food
+    - [Chinese](cuisine)
+    - [Chinese](cuisine) please
+    - [Chinese](cuisine) sounds good
+    - I want to eat at an [Chinese](cuisine) place
+    - I am craving [Chinese](cuisine) food
+    - What about [Chinese](cuisine)
+    - Maybe a [Chinese](cuisine) place
+    - Look for [Chinese](cuisine) restaurants please
+    - Lets do a [Chinese](cuisine) restaurant
+    - [Indian](cuisine)
+    - [Indian](cuisine) please
+    - [Indian](cuisine) sounds good
+    - I want to eat at an [Indian](cuisine) place
+    - I am craving [Indian](cuisine) food
+    - What about [Indian](cuisine)
+    - Maybe a [Indian](cuisine) place
+    - Look for [Indian](cuisine) restaurants please
+    - Lets do a [Indian](cuisine) restaurant
+    - [Mexican](cuisine)
+    - [Mexican](cuisine) please
+    - [Mexican](cuisine) sounds good
+    - I want to eat at an [Mexican](cuisine) place
+    - I am craving [Mexican](cuisine) food
+    - What about [Mexican](cuisine)
+    - Maybe a [Mexican](cuisine) place
+    - Look for [Mexican](cuisine) restaurants please
+    - Lets do a [Mexican](cuisine) restaurant
+    - [Greek](cuisine)
+    - [Greek](cuisine) please
+    - [Greek](cuisine) sounds good
+    - I want to eat at an [Greek](cuisine) place
+    - I am craving [Greek](cuisine) food
+    - What about [Greek](cuisine)
+    - Maybe a [Greek](cuisine) place
+    - Look for [Greek](cuisine) restaurants please
+    - Lets do a [Greek](cuisine) restaurant
+    - [Greek](cuisine) food would be nice
 
 
 - intent: provide_food_preference
   examples: |
-    - vegan
-    - I am looking for vegan places
-    - Please recommend me vegan restaurant
-    - I would like to go to a vegan place
-    - Recommend me something with vegan options
-    - I want vegan food 
-    - vegetarian
-    - I am looking for vegetarian places
-    - Please recommend me vegetarian restaurant
-    - I would like to go to a vegetarian place
-    - Recommend me something with vegetarian options
-    - I want vegetarian food 
-    - gluten free 
-    - I am looking for gluten free places
-    - Please recommend me gluten free restaurant
-    - I would like to go to a gluten free place
-    - Recommend me something with gluten free options
-    - I want gluten free food 
-    - halal
-    - I am looking for halal places
-    - Please recommend me halal restaurant
-    - I would like to go to a halal place
-    - Recommend me something with halal options
-    - I want halal food 
+    - [vegan](food_preference)
+    - I am looking for [vegan](food_preference) places
+    - Please recommend me [vegan](food_preference) restaurant
+    - I would like to go to a [vegan](food_preference) place
+    - Recommend me something with [vegan](food_preference) options
+    - I want [vegan](food_preference) food 
+    - A place with [vegan](food_preference) options
+    - Look for a place with [vegan](food_preference) food
+    - [vegetarian](food_preference)
+    - I am looking for [vegetarian](food_preference) places
+    - Please recommend me [vegetarian](food_preference) restaurant
+    - I would like to go to a [vegetarian](food_preference) place
+    - Recommend me something with [vegetarian](food_preference) options
+    - I want [vegetarian](food_preference) food 
+    - A place with [vegetarian](food_preference) options
+    - Look for a place with [vegetarian](food_preference) food
+    - [gluten free](food_preference)
+    - I am looking for [gluten free](food_preference) places
+    - Please recommend me [gluten free](food_preference) restaurant
+    - I would like to go to a [gluten free](food_preference) place
+    - Recommend me something with [gluten free](food_preference) options
+    - I want [gluten free](food_preference) food 
+    - A place with [gluten free](food_preference) options
+    - Look for a place with [gluten free](food_preference) food
+    - [halal](food_preference)
+    - I am looking for [halal](food_preference) places
+    - Please recommend me [halal](food_preference) restaurant
+    - I would like to go to a [halal](food_preference) place
+    - Recommend me something with [halal](food_preference) options
+    - I want [halal](food_preference) food 
+    - A place with [halal](food_preference) options
+    - Look for a place with [halal](food_preference) food
     - no preference
     - I have no preference
     - I don't care 
+    - I don't have a preference
     - No
     - Not really 
 
@@ -187,32 +226,49 @@ nlu:
     - I choose option A
     - Let's book a table for restaurant A 
     - I want the first option 
+    - the first one
+    - I want number one
+    - I want the first one
+    - Number one 
+    - option 1 
+    - I'll go with number 1
     - Option B
     - I want option B 
     - Option B sounds good
     - I choose option B
     - Let's book a table for restaurant B 
     - I want the second option 
+    - the second one
+    - I want number two
+    - I want the second one
+    - Number two 
+    - option 2 
+    - I'll go with number 2
     - Option C 
     - I want option C
     - Option C sounds good
     - I choose option C
     - Let's book a table for restaurant C 
     - I want the third option 
-
+    - the third one
+    - I want number three
+    - I want the third one
+    - Number three 
+    - option 3 
+    - I'll go with number 3
 
 - intent: provide_time
   examples: |
-    - 7pm
-    - At 7pm
-    - At 7 in the evening
-    - At 7 o'clock
-    - Around 7
-    - 7 would be Great
-    - 7 works for me 
-    - lets do 7pm
-    - how about 7
-    - Is there something free for 7pm?
+    - [7](time)
+    - At [7](time)
+    - At [7](time) in the evening
+    - At [7](time) o'clock
+    - Around [7](time)
+    - [7](time) would be great
+    - [7](time) works for me 
+    - lets do [7](time)
+    - how about [7](time)
+    - Is there something free for [7](time)?
   
 - intent: provide_date
   examples: |
@@ -228,35 +284,37 @@ nlu:
 
 - intent: provide_party_size
   examples: |
-    - a table for one
-    - please make a reservation for one person
+    - [1](num_people)
+    - for [1](num_people)
+    - a table for [1](num_people)
+    - please make a reservation for [1](num_people) person
     - its just me
-    - one person
-    - two 
-    - there are two of us
-    - for two
-    - a table for two please
-    - there will be two of us
-    - three 
-    - there are three of us
-    - for three
-    - a table for three please
-    - there will be three of us
-    - four 
-    - there are four of us
-    - for four
-    - a table for four please
-    - there will be four of us
-    - five 
-    - there are five of us
-    - for five
-    - a table for five please
-    - there will be five of us
-    - six 
-    - there are six of us
-    - for six
-    - a table for six please
-    - there will be six of us
+    - [1](num_people) person
+    - [2](num_people) 
+    - there are [2](num_people)  of us
+    - for [2](num_people) 
+    - a table for [2](num_people)  please
+    - there will be [2](num_people)  of us
+    - [3](num_people)  
+    - there are [3](num_people) of us
+    - for [3](num_people)
+    - a table for [3](num_people) please
+    - there will be [3](num_people) of us
+    - [4](num_people) 
+    - there are [4](num_people)  of us
+    - for [4](num_people) 
+    - a table for [4](num_people)  please
+    - there will be [4](num_people)  of us
+    - [5](num_people)  
+    - there are [5](num_people) of us
+    - for [5](num_people)
+    - a table for [5](num_people) please
+    - there will be [5](num_people) of us
+    - [6](num_people) 
+    - there are [6](num_people)  of us
+    - for [6](num_people) 
+    - a table for [6](num_people)  please
+    - there will be [6](num_people)  of us
 
 - intent: choose_own_restaurant
   examples: |

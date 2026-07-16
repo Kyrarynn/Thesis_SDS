@@ -1,6 +1,6 @@
 version: "3.1"
 
-rules:
+rules: 
 
   # - rule: restart at any point
   #   steps: 
@@ -8,32 +8,27 @@ rules:
   #     - active_loop: null
   #     - action: utter_ask_restart
 
+# # Hard stop / cancel at any point
+#   - rule: user stops
+#     steps:
+#       - intent: stop
+#       - action: action_deactivate_loop
+#       - active_loop: null
+#       - action: utter_goodbye
 
-# greets user / start of conversation
+  # ============================================================
+  # ENTRY POINT
+  # ============================================================
+ 
   - rule: greet user
     steps:
       - intent: greet
       - action: utter_greet
-
-# Hard stop / cancel at any point
-  - rule: user stops
-    steps:
-      - intent: stop
-      - action: action_deactivate_loop
-      - active_loop: null
-      - action: utter_goodbye
-
-# Say goodbye
-  - rule: say goodbye when user does so 
-    steps:
-      - intent: goodbye
-      - action: utter_goodbye
-      - active_loop: null
-
-
-####################################
-# recommendation path: 
-####################################
+ 
+  # ============================================================
+  # PATH A — Recommendation
+  # ============================================================
+ 
 
   - rule: start recommendation path
     steps:
@@ -53,15 +48,15 @@ rules:
   - rule: user confirms recommendation choice
     steps:
       - intent: choose_recommendation
+      - action: action_handle_recommendation_choice
       - action: utter_confirm_recommendation_choice
       - action: booking_form
       - active_loop: booking_form
-
-
-####################################
-# direct booking path: 
-####################################
-
+ 
+  # ============================================================
+  # PATH B — Direct Booking
+  # ============================================================
+ 
   - rule: start direct booking path
     steps:
       - intent: choose_own_restaurant
@@ -74,21 +69,26 @@ rules:
       - action: action_confirm_restaurant_name
  
   - rule: user affirms restaurant name
+    condition:
+      - slot_was_set:
+          - awaiting_restaurant_confirmation: true
     steps:
       - intent: affirm
       - action: booking_form
       - active_loop: booking_form
  
   - rule: user denies restaurant name
+    condition:
+      - slot_was_set:
+          - awaiting_restaurant_confirmation: true
     steps:
       - intent: deny
       - action: action_confirm_restaurant_name
-
-
-####################################
-# booking form - both paths: 
-####################################
-
+ 
+  # ============================================================
+  # BOOKING FORM — shared by both paths
+  # ============================================================
+ 
   - rule: submit booking form
     condition:
       - active_loop: booking_form
@@ -99,7 +99,8 @@ rules:
  
   - rule: user affirms booking confirmation
     condition:
-      - active_loop: booking_form
+      - slot_was_set:
+          - awaiting_restaurant_confirmation: false
     steps:
       - intent: affirm
       - action: utter_booking_confirmed
@@ -107,12 +108,19 @@ rules:
  
   - rule: user denies booking confirmation
     condition:
-      - active_loop: booking_form
+      - slot_was_set:
+          - awaiting_restaurant_confirmation: false
     steps:
       - intent: deny
       - action: utter_booking_cancelled
-
-
-
-
-
+ 
+  # ============================================================
+  # GLOBAL — stop at any point
+  # ============================================================
+ 
+  - rule: user stops
+    steps:
+      - intent: stop
+      - action: action_deactivate_loop
+      - active_loop: null
+      - action: utter_goodbye

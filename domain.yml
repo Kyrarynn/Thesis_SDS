@@ -56,6 +56,11 @@ slots:
     mappings:
       - type: from_entity
         entity: cuisine
+  
+  recommendations:
+    type: list
+    mappings:
+      - type: custom
 
   restaurant_name:
     type: text
@@ -112,6 +117,12 @@ responses:
   utter_greet:
     - text: "Hello! I am a Bot that can help you find a restaurant or make a reservation. Would you like a recommendation, or do you already have a place in mind?"
   
+  utter_ask_path:
+    - text: "Would you like a recommendation, or do you already have a place in mind?"
+
+  utter_ask_path_again:
+    - text: "Sorry I didn't get that. Would you like a recommendation or book directly? "
+
   utter_ask_restaurant_name:
     - text: "Got it. Which restaurant would you like to book? Please tell me the name."
 
@@ -158,6 +169,7 @@ responses:
 actions:
   - action_set_dialog_path
   - action_give_recommendations
+  - action_handle_recommendation_choice
   - action_confirm_restaurant_name
   - action_handle_booking
   - validate_booking_form
