@@ -1,0 +1,17 @@
+{
+  "0": "affirm",
+  "1": "choose_own_restaurant",
+  "2": "choose_recommendation",
+  "3": "choose_recommendation_path",
+  "4": "deny",
+  "5": "goodbye",
+  "6": "greet",
+  "7": "provide_cuisine",
+  "8": "provide_date",
+  "9": "provide_district",
+  "10": "provide_food_preference",
+  "11": "provide_party_size",
+  "12": "provide_restaurant_name",
+  "13": "provide_time",
+  "14": "restart"
+}

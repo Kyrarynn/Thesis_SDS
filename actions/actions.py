@@ -1,44 +1,12 @@
-
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
-from rasa_sdk.events import SlotSet, FollowupAction
+from rasa_sdk.events import SlotSet
 from rasa_sdk.forms import FormValidationAction
 from rasa_sdk.types import DomainDict
 from typing import Any, Dict, List, Text
 import logging
 
 logger = logging.getLogger(__name__)
-
-# ============================================================
-# Conversation Start
-# ============================================================
-
-class ChooseYourPath(Action):
-    def name(self) -> Text:
-        return "choose_your_path"
-
-    def run(self, dispatcher, tracker, domain):
-        
-        dispatcher.utter_message(response="utter_greet")
-        dispatcher.utter_message(response="utter_ask_path")
-
-        path = tracker.get_slot("dialog_path")
-
-        if (path == "recommendation"):
-
-            # log path 
-            FollowupAction("start_direct_booking")
-        
-        elif (path == "direct_booking"):
-
-            # log path
-            FollowupAction("start_recommendation")
-
-        else:
-            dispatcher.utter_message(response="utter_ask_path_again")  
-
-        
-
 
 
 # ============================================================
@@ -47,7 +15,12 @@ class ChooseYourPath(Action):
 
 class ValidateRecommendationForm(FormValidationAction):
     """
-    Validates all slots during the recommendation form.
+    Validates district, cuisine, and food_preference slots.
+
+    SYSTEM A ERROR — fires on food_preference slot.
+    Simulates the system failing to understand the user's dietary
+    preference on the first attempt, forcing them to repeat it.
+    This creates a frustration event early in the dialog.
     """
 
     def name(self) -> Text:
@@ -76,7 +49,7 @@ class ValidateRecommendationForm(FormValidationAction):
             return {"cuisine": slot_value.strip()}
         dispatcher.utter_message(text="I didn't catch that. What kind of food are you in the mood for?")
         return {"cuisine": None}
-    
+
     def validate_food_preference(
         self,
         slot_value: Any,
@@ -84,100 +57,140 @@ class ValidateRecommendationForm(FormValidationAction):
         tracker: Tracker,
         domain: DomainDict,
     ) -> Dict[Text, Any]:
-    # Accept entity value if extracted, otherwise use raw text as fallback
+
+        system_version = tracker.get_slot("system_version")
+        error_fired = tracker.get_slot("error_fired")
+
+        # -------------------------------------------------------
+        # SYSTEM A ERROR — misunderstands food preference once
+        # The error only fires on the first attempt (error_fired=False)
+        # so the dialog recovers naturally on the second try.
+        # -------------------------------------------------------
+        if system_version == "A" and not error_fired:
+            dispatcher.utter_message(
+                text="I'm sorry, I didn't quite catch that. "
+                     "Could you repeat your dietary preference? "
+                     "For example: vegan, vegetarian, halal, gluten free, or no preference."
+            )
+            return {"food_preference": None, "error_fired": True}
+
+        # Normal validation — accept entity or fall back to raw text
         if slot_value:
-            return {"food_preference": slot_value}
-        # Check raw text for "no preference" type responses
-        text = tracker.latest_message.get("text", "").lower()
-        no_pref_keywords = ["no preference", "don't care", "no", "not really", "none"]
-        if any(kw in text for kw in no_pref_keywords):
-            return {"food_preference": "none"}
-        dispatcher.utter_message(text="I didn't catch that. Do you have any dietary preferences, or no preference?")
+            return {"food_preference": slot_value, "error_fired": False}
+
+        raw_text = tracker.latest_message.get("text", "").lower()
+        no_pref_keywords = ["no preference", "don't care", "no", "not really", "none", "nothing"]
+        if any(kw in raw_text for kw in no_pref_keywords):
+            return {"food_preference": "none", "error_fired": False}
+
+        dispatcher.utter_message(
+            text="I didn't catch that. Do you have any dietary preferences, or no preference?"
+        )
         return {"food_preference": None}
 
 
 class ValidateBookingForm(FormValidationAction):
     """
-    Validates all four booking slots.
+    Validates date, time, and num_people slots.
+    Uses raw text fallback for date and time since these are
+    free-text expressions rather than structured entities.
     """
 
     def name(self) -> Text:
         return "validate_booking_form"
 
-    def validate_restaurant_name(
-        self,
-        slot_value: Any,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: DomainDict,
-    ) -> Dict[Text, Any]:
-        if slot_value and len(slot_value.strip()) > 1:
-            return {"restaurant_name": slot_value.strip()}
-        dispatcher.utter_message(text="I didn't catch the restaurant name. Could you say it again?")
-        return {"restaurant_name": None}
-
     def validate_date(
-        self,
-        slot_value: Any,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: DomainDict,
+    self,
+    slot_value: Any,
+    dispatcher: CollectingDispatcher,
+    tracker: Tracker,
+    domain: DomainDict,
     ) -> Dict[Text, Any]:
-    # Use entity value if extracted, otherwise fall back to raw text
         if slot_value:
             return {"date": slot_value}
-        # Fallback: use whatever the user said directly
-        raw_text = tracker.latest_message.get("text", "").strip()
-        if raw_text:
-            return {"date": raw_text}
+        for event in reversed(tracker.events):
+            if event.get("event") == "user":
+                raw_text = event.get("text", "").strip()
+                if raw_text:
+                    return {"date": raw_text}
         dispatcher.utter_message(text="I didn't catch the date. Could you repeat it?")
         return {"date": None}
 
     def validate_time(
-        self,
-        slot_value: Any,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: DomainDict,
+    self,
+    slot_value: Any,
+    dispatcher: CollectingDispatcher,
+    tracker: Tracker,
+    domain: DomainDict,
     ) -> Dict[Text, Any]:
+        # Use extracted entity if available
         if slot_value:
             return {"time": slot_value}
-        raw_text = tracker.latest_message.get("text", "").strip()
-        if raw_text:
-            return {"time": raw_text}
+        # Fall back to full raw text of last user message
+        for event in reversed(tracker.events):
+            if event.get("event") == "user":
+                raw_text = event.get("text", "").strip()
+                if raw_text:
+                    return {"time": raw_text}
         dispatcher.utter_message(text="I didn't catch the time. Could you say it again?")
         return {"time": None}
 
     def validate_num_people(
-        self,
-        slot_value: Any,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: DomainDict,
+    self,
+    slot_value: Any,
+    dispatcher: CollectingDispatcher,
+    tracker: Tracker,
+    domain: DomainDict,
     ) -> Dict[Text, Any]:
+
+        word_to_num = {
+            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+            "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+            "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+            "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+            "nineteen": 19, "twenty": 20,
+        }
+
+        # Get the value to parse — entity extraction or raw text fallback
+        raw = slot_value
+        if not raw:
+            for event in reversed(tracker.events):
+                if event.get("event") == "user":
+                    raw = event.get("text", "").strip().lower()
+                    break
+
+        if not raw:
+            dispatcher.utter_message(text="I need a number for the party size. How many people?")
+            return {"num_people": None}
+
+        # Try word first, then digit
+        raw_lower = str(raw).lower().strip()
+        if raw_lower in word_to_num:
+            return {"num_people": word_to_num[raw_lower]}
+
         try:
-            n = int(slot_value)
-            if 1 <= n <= 6:
+            n = int(raw_lower)
+            if 1 <= n <= 20:
                 return {"num_people": n}
-            dispatcher.utter_message(text="Please enter a number between 1 and 6.")
+            dispatcher.utter_message(text="Please enter a number between 1 and 20.")
             return {"num_people": None}
         except (ValueError, TypeError):
             dispatcher.utter_message(text="I need a number for the party size. How many people?")
             return {"num_people": None}
 
-
 # ============================================================
 # CUSTOM ACTIONS
 # ============================================================
 
-class ActionSetDialogPath(Action):
+class ActionGiveRecommendations(Action):
     """
-    Fires immediately after the user chooses a path.
-    Sets dialog_path slot for downstream logic and IQ analysis.
+    Returns a numbered list of restaurants based on filled slots.
+    Stores the list in the recommendations slot for later resolution.
+    TODO: replace stub list with real data source.
     """
 
     def name(self) -> Text:
-        return "action_set_dialog_path"
+        return "action_give_recommendations"
 
     def run(
         self,
@@ -186,35 +199,17 @@ class ActionSetDialogPath(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
 
-        last_intent = tracker.latest_message.get("intent", {}).get("name")
-
-        if last_intent == "choose_recommendation_path":
-            path = "recommendation"
-        elif last_intent == "choose_own_restaurant":
-            path = "direct_booking"
-        else:
-            path = "direct_booking"  # safe fallback
-
-        logger.info(f"Dialog path set to: {path}")
-        return [SlotSet("dialog_path", path)]
-
-
-class ActionGiveRecommendations(Action):
-
-    def name(self) -> Text:
-        return "action_give_recommendations"
-
-    def run(self, dispatcher, tracker, domain):
         district = tracker.get_slot("district") or "your area"
         cuisine = tracker.get_slot("cuisine") or "various cuisines"
         food_preference = tracker.get_slot("food_preference") or ""
 
-        # TO_DO — replace with real data
+        # --- STUB: replace with real restaurant data ---
         recommendations = [
             "Alpha Mouse Cheese Palace",
             "Beta Test - Food Creation",
             "Gamma Grandma Cooking",
         ]
+        # -----------------------------------------------
 
         pref_str = f" {food_preference}" if food_preference and food_preference != "none" else ""
         rec_list = "\n".join([f"  {i+1}. {r}" for i, r in enumerate(recommendations)])
@@ -227,33 +222,43 @@ class ActionGiveRecommendations(Action):
             )
         )
 
-        # Stores recommendations in a slot so the choice action can look them up
         return [SlotSet("recommendations", recommendations)]
 
 
 class ActionHandleRecommendationChoice(Action):
+    """
+    Resolves the user's restaurant choice from the recommendations list.
+    Sets restaurant_name and asks for confirmation before starting the
+    booking form.
+    """
 
     def name(self) -> Text:
         return "action_handle_recommendation_choice"
 
-    def run(self, dispatcher, tracker, domain):
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+
         recommendations = tracker.get_slot("recommendations") or []
         text = tracker.latest_message.get("text", "").lower()
 
         chosen = None
 
-        # Try to match by number ("1", "option 1", "the first one")
+        # Match by number or ordinal word
         number_map = {
             "1": 0, "one": 0, "first": 0, "a": 0,
             "2": 1, "two": 1, "second": 1, "b": 1,
             "3": 2, "three": 2, "third": 2, "c": 2,
         }
         for keyword, index in number_map.items():
-            if keyword in text and index < len(recommendations):
+            if keyword in text.split() and index < len(recommendations):
                 chosen = recommendations[index]
                 break
 
-        # Try to match by name directly
+        # Match by restaurant name directly
         if not chosen:
             for rec in recommendations:
                 if rec.lower() in text:
@@ -265,63 +270,25 @@ class ActionHandleRecommendationChoice(Action):
             chosen = recommendations[0]
 
         logger.info(f"Recommendation chosen: {chosen}")
-        return [SlotSet("restaurant_name", chosen)]
 
-class ActionConfirmRestaurantName(Action):
-    """
-    Handles restaurant name collection and confirmation loop for direct booking path.
-
-    Turn 1: restaurant_name is empty → ask for name
-    Turn 2: restaurant_name is filled, not yet confirmed → ask for confirmation
-    Turn 3a: user affirms → rule moves to booking_form
-    Turn 3b: user denies → clear slot, ask again (back to Turn 1)
-
-    TODO: System B difficulty injection here (e.g. forced misrecognition,
-    re-entry loop) when dialog_path == "direct_booking".
-    """
-
-    def name(self) -> Text:
-        return "action_confirm_restaurant_name"
-
-    def run(
-        self,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: Dict[Text, Any],
-    ) -> List[Dict[Text, Any]]:
-
-        awaiting_confirmation = tracker.get_slot("awaiting_restaurant_confirmation")
-        last_intent = tracker.latest_message.get("intent", {}).get("name")
-
-        if awaiting_confirmation and last_intent == "deny":
-            # User said the name was wrong — clear and ask again
-            dispatcher.utter_message(text="My apologies! What is the correct restaurant name?")
-            return [
-                SlotSet("restaurant_name", None),
-                SlotSet("awaiting_restaurant_confirmation", False),
-            ]
-
-        restaurant_name = tracker.get_slot("restaurant_name")
-
-        if not restaurant_name:
-            # Slot not yet filled — ask for name
-            dispatcher.utter_message(text="Which restaurant would you like to book?")
-            return [SlotSet("awaiting_restaurant_confirmation", False)]
-
-        # Name is filled — ask for confirmation
         dispatcher.utter_message(
-            text=f"You want to eat at {restaurant_name}, is that correct?"
+            text=f"Great choice! You've selected {chosen}. Shall I go ahead and book a table there?"
         )
-        return [SlotSet("awaiting_restaurant_confirmation", True)]
+
+        return [
+            SlotSet("restaurant_name", chosen),
+            SlotSet("awaiting_booking_start", True),
+        ]
 
 
 class ActionHandleBooking(Action):
     """
-    Final booking step. Reads system_version and dialog_path to decide
-    whether to confirm smoothly (System A) or inject difficulty (System B).
+    Final booking step. Presents a summary and asks for confirmation.
 
-    Difficulty injection is centralised here — one place to control
-    for both paths, making it easy to adjust for your study design.
+    SYSTEM B ERROR — fires here, near the end of the dialog.
+    Simulates the system having trouble processing the booking
+    confirmation, forcing the user to re-confirm once before succeeding.
+    This creates a frustration event late in the dialog.
     """
 
     def name(self) -> Text:
@@ -335,46 +302,38 @@ class ActionHandleBooking(Action):
     ) -> List[Dict[Text, Any]]:
 
         system_version = tracker.get_slot("system_version")
-        dialog_path    = tracker.get_slot("dialog_path")
+        error_fired    = tracker.get_slot("error_fired")
         restaurant     = tracker.get_slot("restaurant_name")
         date           = tracker.get_slot("date")
         time           = tracker.get_slot("time")
         num_people     = tracker.get_slot("num_people")
 
         logger.info(
-            f"Booking | system={system_version} | path={dialog_path} | "
-            f"restaurant={restaurant} | date={date} | time={time} | people={num_people}"
+            f"Booking | system={system_version} | restaurant={restaurant} | "
+            f"date={date} | time={time} | people={num_people} | error_fired={error_fired}"
         )
 
-        if system_version == "B" and dialog_path == "direct_booking":
-            # -------------------------------------------------------
-            # SYSTEM B — direct booking path difficulty injection
-            # TODO: define exact difficulty type, e.g.:
-            #   - Forced name re-entry ("Sorry, I can't find that restaurant")
-            #   - ASR misrecognition ("Did you say Tuesday?")
-            #   - Confirmation loop failure (ask twice before accepting)
-            # -------------------------------------------------------
+        # -------------------------------------------------------
+        # SYSTEM B ERROR — trouble confirming booking on first attempt
+        # Fires once (error_fired=False), then resolves on retry.
+        # -------------------------------------------------------
+        if system_version == "B" and not error_fired:
             dispatcher.utter_message(
-                text="I'm sorry, I couldn't find that restaurant in our system. "
-                     "Could you double-check the name?"
+                text="I'm sorry, I'm having trouble processing your booking right now. "
+                     "Could you confirm the details again? "
+                     f"That was {restaurant} on {date} at {time} for {num_people} people?"
             )
-            return [SlotSet("restaurant_name", None)]
+            return [
+                SlotSet("awaiting_booking_start", False),
+                SlotSet("error_fired", True),
+            ]
 
-        elif system_version == "B" and dialog_path == "recommendation":
-            # -------------------------------------------------------
-            # SYSTEM B — recommendation path difficulty injection
-            # Milder friction or none — adjust to your study design
-            # -------------------------------------------------------
-            dispatcher.utter_message(
-                text=f"To confirm: {restaurant} on {date} at {time} "
-                     f"for {num_people} people — shall I go ahead?"
-            )
-            return []
-
-        else:
-            # System A — smooth confirmation
-            dispatcher.utter_message(
-                text=f"To confirm: {restaurant} on {date} at {time} "
-                     f"for {num_people} people — shall I go ahead?"
-            )
-            return []
+        # Normal confirmation — both System A and System B (after error)
+        dispatcher.utter_message(
+            text=f"To confirm: {restaurant} on {date} at {time} "
+                 f"for {num_people} people — shall I go ahead?"
+        )
+        return [
+            SlotSet("awaiting_booking_start", False),
+            SlotSet("error_fired", False),
+        ]

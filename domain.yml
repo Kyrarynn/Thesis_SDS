@@ -2,90 +2,30 @@ version: "3.1"
 
 intents:
   - greet
-  - goodbye
-  - affirm
-  - deny
-  - restart
   - choose_recommendation_path
+  - choose_recommendation
   - provide_district
   - provide_cuisine
   - provide_food_preference
-  - choose_recommendation
   - provide_party_size
   - provide_date
   - provide_time
-  - choose_own_restaurant
-  - provide_restaurant_name
-  
+  - affirm
+  - deny
+  - stop
 
 entities:
   - district
   - cuisine
   - food_preference
   - restaurant_name
-  - time
   - date
+  - time
   - num_people
 
 slots:
-  dialog_path:
-    type: categorical
-    values:
-      - recommendation
-      - direct_booking
-    initial_value: null
-    # influence_conversation: true
-    mappings:
-      - type: custom
 
-  district:
-    type: text
-    mappings:
-      - type: from_entity
-        entity: district
-
-  food_preference:
-    type: text
-    mappings:
-      - type: from_entity
-        entity: food_preference
-
-  cuisine:
-    type: text
-    mappings:
-      - type: from_entity
-        entity: cuisine
-  
-  recommendations:
-    type: list
-    mappings:
-      - type: custom
-
-  restaurant_name:
-    type: text
-    mappings:
-      - type: from_entity
-        entity: restaurant_name
-
-  time:
-    type: text
-    mappings:
-      - type: from_entity
-        entity: time
-
-  date:
-    type: text
-    mappings:
-      - type: from_entity
-        entity: date
-
-  num_people:
-    type: float
-    mappings:
-      - type: from_entity
-        entity: num_people
-
-  # System A/B condition assigned at session start by FastAPI
+  # Set externally by FastAPI at session start — "A" or "B"
   system_version:
     type: categorical
     values:
@@ -94,60 +34,93 @@ slots:
     initial_value: null
     mappings:
       - type: custom
-  
-  # confirmation:
-  #   type: bool
-  #   mappings:
-  #     - type: from_intent
-  #       intent: affirm
-  #       value: true
-  #     - type: from_intent
-  #       intent: deny
-  #       value: false
 
-  awaiting_restaurant_confirmation:
+  # Recommendation form slots
+  district:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: district
+
+  cuisine:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: cuisine
+
+  food_preference:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: food_preference
+
+  # Booking form slots
+  restaurant_name:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: restaurant_name
+
+  date:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: date
+
+  time:
+    type: text
+    mappings:
+      - type: from_entity
+        entity: time
+
+  num_people:
+    type: float
+    mappings:
+      - type: from_entity
+        entity: num_people
+
+  # Stores the recommendation list so ActionHandleRecommendationChoice can resolve choices
+  recommendations:
+    type: list
+    mappings:
+      - type: custom
+
+  # Gates the booking form start after restaurant confirmation
+  awaiting_booking_start:
     type: bool
     initial_value: false
     mappings:
       - type: custom
 
+  # Tracks how many times System B has injected an error at the booking stage
+  # Used to ensure the error only fires once, then resolves
+  error_fired:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: custom
 
 responses:
   utter_greet:
-    - text: "Hello! I am a Bot that can help you find a restaurant or make a reservation. Would you like a recommendation, or do you already have a place in mind?"
-  
-  utter_ask_path:
-    - text: "Would you like a recommendation, or do you already have a place in mind?"
-
-  utter_ask_path_again:
-    - text: "Sorry I didn't get that. Would you like a recommendation or book directly? "
-
-  utter_ask_restaurant_name:
-    - text: "Got it. Which restaurant would you like to book? Please tell me the name."
+    - text: "Hello! I can help you find and book a restaurant. Tell me if you want a recommendation to start"
 
   utter_ask_district:
-    - text: "Let me ask some questions to get a feel for your preferences. Which district are you looking in?"
+    - text: "Which district are you looking in?"
 
   utter_ask_cuisine:
-    - text: "What cuisine are you in the mood for? Italian, Japanese or Mexican are popular nowadays."
-  
+    - text: "What cuisine are you in the mood for?"
+
   utter_ask_food_preference:
-    - text: "One last question: Do you have specific food preferences? For example, would you like a place with vegan or gluten free options."
-
-  utter_confirm_recommendation_choice:
-    - text: "Great choice! Shall we proceed to booking a table?"
-
-  utter_ask_time:
-    - text: "What time would you like the reservation?"
+    - text: "Do you have any dietary preferences? For example, vegan, vegetarian, halal, or gluten free — or no preference."
 
   utter_ask_date:
     - text: "What date works for you?"
 
+  utter_ask_time:
+    - text: "What time would you like the reservation?"
+
   utter_ask_num_people:
     - text: "How many people will be dining?"
-
-  utter_confirm_booking:
-    - text: "Just to confirm: {restaurant_name} on {date} at {time} for {num_people} people. Does that sound right?"
 
   utter_booking_confirmed:
     - text: "Perfect, your reservation is confirmed. Enjoy your meal!"
@@ -156,34 +129,27 @@ responses:
     - text: "No problem, the booking has been cancelled."
 
   utter_ask_restart:
-    - text: "Is there anything else I can help you with? Make a booking or give a recommendation?"
-
-  # System B difficulty injections (stubs — flesh out in custom actions)
-  utter_booking_error_system_b:
-    - text: "I'm sorry, I'm having trouble processing that. Could you repeat the date?"
+    - text: "Is there anything else I can help you with?"
 
   utter_goodbye:
-    - text: "Bye! Have a great day!"
+    - text: "Goodbye! Hope to see you again soon."
 
 actions:
-  - action_set_dialog_path
   - action_give_recommendations
   - action_handle_recommendation_choice
-  - action_confirm_restaurant_name
   - action_handle_booking
-  - validate_booking_form
   - validate_recommendation_form
+  - validate_booking_form
 
 forms:
-  booking_form:
-    required_slots:
-      - restaurant_name
-      - date
-      - time
-      - num_people
-
   recommendation_form:
     required_slots:
       - district
       - cuisine
       - food_preference
+
+  booking_form:
+    required_slots:
+      - date
+      - time
+      - num_people

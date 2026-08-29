@@ -402,6 +402,14 @@ nlu:
     - for [6](num_people) 
     - a table for [6](num_people)  please
     - there will be [6](num_people)  of us
+    - [four](num_people)
+    - [two](num_people)
+    - [three](num_people)
+    - [four](num_people) people
+    - just [one](num_people)
+    - [five](num_people) of us
+    - a table for [two](num_people)
+    - there will be [three](num_people) of us
 
 - intent: choose_own_restaurant
   examples: |

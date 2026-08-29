@@ -1,28 +1,29 @@
 version: "3.1"
 
-rules: 
+rules:
 
   # ============================================================
   # ENTRY POINT
   # ============================================================
- 
+
   - rule: greet user
     steps:
       - intent: greet
       - action: utter_greet
- 
+
   # ============================================================
-  # PATH A — Recommendation
+  # RECOMMENDATION FORM
+  # Collects district, cuisine, food_preference.
+  # System A error fires inside validate_recommendation_form
+  # (food_preference slot — simulates misunderstanding early in dialog)
   # ============================================================
- 
 
   - rule: start recommendation path
     steps:
       - intent: choose_recommendation_path
-      - action: action_set_dialog_path
       - action: recommendation_form
       - active_loop: recommendation_form
- 
+
   - rule: submit recommendation form
     condition:
       - active_loop: recommendation_form
@@ -30,51 +31,42 @@ rules:
       - action: recommendation_form
       - active_loop: null
       - action: action_give_recommendations
- 
-  - rule: user confirms recommendation choice
+
+  # ============================================================
+  # RESTAURANT SELECTION
+  # User picks from the list; action sets restaurant_name
+  # and asks confirmation before booking form starts.
+  # ============================================================
+
+  - rule: user picks a recommendation
     steps:
       - intent: choose_recommendation
       - action: action_handle_recommendation_choice
-      - action: utter_confirm_recommendation_choice
-      - action: booking_form
-      - active_loop: booking_form
- 
-  # ============================================================
-  # PATH B — Direct Booking
-  # ============================================================
- 
-  - rule: start direct booking path
-    steps:
-      - intent: choose_own_restaurant
-      - action: action_set_dialog_path
-      - action: action_confirm_restaurant_name
- 
-  - rule: user provides restaurant name
-    steps:
-      - intent: provide_restaurant_name
-      - action: action_confirm_restaurant_name
- 
-  - rule: user affirms restaurant name
+
+  - rule: user confirms restaurant to start booking
     condition:
       - slot_was_set:
-          - awaiting_restaurant_confirmation: true
+          - awaiting_booking_start: true
     steps:
       - intent: affirm
       - action: booking_form
       - active_loop: booking_form
- 
-  - rule: user denies restaurant name
+
+  - rule: user declines restaurant choice
     condition:
       - slot_was_set:
-          - awaiting_restaurant_confirmation: true
+          - awaiting_booking_start: true
     steps:
       - intent: deny
-      - action: action_confirm_restaurant_name
- 
+      - action: action_give_recommendations    # re-show list so user can pick again
+
   # ============================================================
-  # BOOKING FORM — shared by both paths
+  # BOOKING FORM
+  # Collects date, time, num_people.
+  # System B error fires inside action_handle_booking
+  # (booking confirmation — simulates trouble near end of dialog)
   # ============================================================
- 
+
   - rule: submit booking form
     condition:
       - active_loop: booking_form
@@ -82,38 +74,31 @@ rules:
       - action: booking_form
       - active_loop: null
       - action: action_handle_booking
- 
+
   - rule: user affirms booking confirmation
     condition:
       - slot_was_set:
-          - awaiting_restaurant_confirmation: false
+          - awaiting_booking_start: false
     steps:
       - intent: affirm
       - action: utter_booking_confirmed
       - action: utter_ask_restart
- 
+
   - rule: user denies booking confirmation
     condition:
       - slot_was_set:
-          - awaiting_restaurant_confirmation: false
+          - awaiting_booking_start: false
     steps:
       - intent: deny
       - action: utter_booking_cancelled
- 
+
   # ============================================================
-  # GLOBAL — stop at any point
+  # GLOBAL
   # ============================================================
- 
-  - rule: user goodbye
+
+  - rule: user stops
     steps:
-      - intent: goodbye
+      - intent: stop
       - action: action_deactivate_loop
       - active_loop: null
       - action: utter_goodbye
-  
-  # - rule: restart at any point
-  #   steps: 
-  #     - intent: restart
-  #     - action: action_deactivate_loop
-  #     - active_loop: null
-  #     - action: utter_ask_restart

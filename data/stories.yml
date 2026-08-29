@@ -2,6 +2,34 @@ version: "3.1"
 
 stories:
 
+# Minimal story for policy training only.
+# All flow is handled by rules.yml and custom actions.
+
+
+  # - story: recommendation path end to end
+  #   steps:
+  #     - intent: greet
+  #     - action: utter_greet
+  #     - intent: choose_recommendation_path
+  #     - action: recommendation_form
+  #     - active_loop: recommendation_form
+  #     - active_loop: null
+  #     - action: action_give_recommendations
+  #     - intent: choose_recommendation
+  #     - action: action_handle_recommendation_choice
+  #     - intent: affirm
+  #     - action: booking_form
+  #     - active_loop: booking_form
+  #     - active_loop: null
+  #     - action: action_handle_booking
+  #     - intent: affirm
+  #     - action: utter_booking_confirmed
+  #     - action: utter_ask_restart
+
+
+# old stuff: 
+
+
 #   - story: recommendation path end to end
 #     steps:
 #       - intent: greet
