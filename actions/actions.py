@@ -8,6 +8,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# ============================================================
+# HELPER
+# ============================================================
+ 
+def get_last_user_text(tracker: Tracker) -> str:
+    """
+    Reliably retrieves the most recent user message text from the
+    event history. More robust than tracker.latest_message inside
+    form validation calls where message context can be ambiguous.
+    """
+    for event in reversed(tracker.events):
+        if event.get("event") == "user":
+            return event.get("text", "").strip()
+    return ""
+ 
 
 # ============================================================
 # FORM VALIDATORS
@@ -18,36 +33,42 @@ class ValidateRecommendationForm(FormValidationAction):
     Validates district, cuisine, and food_preference slots.
 
     SYSTEM A ERROR — fires on food_preference slot.
-    Simulates the system failing to understand the user's dietary
-    preference on the first attempt, forcing them to repeat it.
-    This creates a frustration event early in the dialog.
+    Simulates an ASR misrecognition: the system mishears the dietary
+    preference and repeats back a plausible wrong value, forcing the
+    user to correct it. Error fires exactly once then resolves.
     """
 
     def name(self) -> Text:
         return "validate_recommendation_form"
 
-    def validate_district(
-        self,
-        slot_value: Any,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: DomainDict,
-    ) -> Dict[Text, Any]:
-        if slot_value and len(slot_value.strip()) > 1:
-            return {"district": slot_value.strip()}
-        dispatcher.utter_message(text="I didn't catch the district. Which area are you looking in?")
+    def validate_district(self, slot_value, dispatcher, tracker, domain):
+    # slot_value is now always the raw text (from_text mapping)
+        if slot_value:
+            cleaned = slot_value.strip()
+            for prefix in ["i'm looking in ", "in ", "at ", "near ", "around "]:
+                if cleaned.lower().startswith(prefix):
+                    cleaned = cleaned[len(prefix):]
+                    break
+            if len(cleaned) > 1:
+                return {"district": cleaned.strip()}
+        dispatcher.utter_message(
+            text="I didn't catch the district. Which area are you looking in?"
+        )
         return {"district": None}
 
-    def validate_cuisine(
-        self,
-        slot_value: Any,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domain: DomainDict,
-    ) -> Dict[Text, Any]:
-        if slot_value and len(slot_value.strip()) > 1:
-            return {"cuisine": slot_value.strip()}
-        dispatcher.utter_message(text="I didn't catch that. What kind of food are you in the mood for?")
+    def validate_cuisine(self, slot_value, dispatcher, tracker, domain):
+        if slot_value:
+            cleaned = slot_value.strip()
+            # Strip common filler phrases
+            for prefix in ["i want ", "i'd like ", "i feel like ", "something "]:
+                if cleaned.lower().startswith(prefix):
+                    cleaned = cleaned[len(prefix):]
+                    break
+            if len(cleaned) > 1:
+                return {"cuisine": cleaned.strip()}
+        dispatcher.utter_message(
+            text="I didn't catch that. What kind of food are you in the mood for?"
+        )
         return {"cuisine": None}
 
     def validate_food_preference(
@@ -61,32 +82,53 @@ class ValidateRecommendationForm(FormValidationAction):
         system_version = tracker.get_slot("system_version")
         error_fired = tracker.get_slot("error_fired")
 
+        # Check if no preference -> intent == deny (happens when user says "no" or something similar)
+        last_intent = tracker.latest_message.get("intent", {}).get("name")
+        if last_intent == "deny":
+            return {"food_preference": "none", "error_fired": False}
+
         # -------------------------------------------------------
         # SYSTEM A ERROR — misunderstands food preference once
         # The error only fires on the first attempt (error_fired=False)
         # so the dialog recovers naturally on the second try.
         # -------------------------------------------------------
         if system_version == "A" and not error_fired:
+            raw = get_last_user_text(tracker)
+            # Generate a plausible mishearing based on what the user said
+            mishearing_map = {
+                "vegan": "began",
+                "vegetarian": "Mediterranean",
+                "halal": "falafel",
+                "gluten free": "gluten three",
+                "gluten": "glutton",
+            }
+            raw_lower = raw.lower()
+            mishearing = next(
+                (v for k, v in mishearing_map.items() if k in raw_lower),
+                "begin"   # generic fallback mishearing
+            )
             dispatcher.utter_message(
-                text="I'm sorry, I didn't quite catch that. "
-                     "Could you repeat your dietary preference? "
-                     "For example: vegan, vegetarian, halal, gluten free, or no preference."
+                text=f'I\'m sorry, did you say "{mishearing}"? '
+                     f"I didn't quite catch that. "
+                     f"Could you repeat your dietary preference?"
             )
             return {"food_preference": None, "error_fired": True}
-
-        # Normal validation — accept entity or fall back to raw text
+ 
+        # Normal validation — entity extraction or raw text fallback
         if slot_value:
             return {"food_preference": slot_value, "error_fired": False}
-
-        raw_text = tracker.latest_message.get("text", "").lower()
+ 
+        raw = get_last_user_text(tracker).lower()
         no_pref_keywords = ["no preference", "don't care", "no", "not really", "none", "nothing"]
-        if any(kw in raw_text for kw in no_pref_keywords):
+        if any(kw in raw for kw in no_pref_keywords):
             return {"food_preference": "none", "error_fired": False}
-
+ 
         dispatcher.utter_message(
-            text="I didn't catch that. Do you have any dietary preferences, or no preference?"
+            text="I didn't catch that. Do you have any dietary preferences, "
+                 "or no preference?"
         )
         return {"food_preference": None}
+
 
 
 class ValidateBookingForm(FormValidationAction):
@@ -116,22 +158,23 @@ class ValidateBookingForm(FormValidationAction):
         dispatcher.utter_message(text="I didn't catch the date. Could you repeat it?")
         return {"date": None}
 
-    def validate_time(
-    self,
-    slot_value: Any,
-    dispatcher: CollectingDispatcher,
-    tracker: Tracker,
-    domain: DomainDict,
-    ) -> Dict[Text, Any]:
-        # Use extracted entity if available
+    def validate_time(self, slot_value, dispatcher, tracker, domain):
         if slot_value:
             return {"time": slot_value}
-        # Fall back to full raw text of last user message
-        for event in reversed(tracker.events):
-            if event.get("event") == "user":
-                raw_text = event.get("text", "").strip()
-                if raw_text:
-                    return {"time": raw_text}
+        raw = get_last_user_text(tracker)
+        if raw:
+            # Basic sanity check — reject obvious nonsense
+            time_hints = [":", "am", "pm", "o'clock", "half", "quarter",
+                        "morning", "afternoon", "evening", "night",
+                        "one", "two", "three", "four", "five", "six",
+                        "seven", "eight", "nine", "ten", "eleven", "twelve"]
+            if any(hint in raw.lower() for hint in time_hints) or any(c.isdigit() for c in raw):
+                return {"time": raw}
+            dispatcher.utter_message(
+                text="I didn't quite understand that time. "
+                    "Could you say it again? For example: 7pm, half past six, 19:00."
+            )
+            return {"time": None}
         dispatcher.utter_message(text="I didn't catch the time. Could you say it again?")
         return {"time": None}
 
@@ -286,9 +329,11 @@ class ActionHandleBooking(Action):
     Final booking step. Presents a summary and asks for confirmation.
 
     SYSTEM B ERROR — fires here, near the end of the dialog.
-    Simulates the system having trouble processing the booking
-    confirmation, forcing the user to re-confirm once before succeeding.
-    This creates a frustration event late in the dialog.
+    Simulates a slot confirmation failure: the system claims it cannot
+    process the date and asks the user to re-enter it. This creates a
+    realistic late-dialog frustration event close to the Peak-End 'end'.
+    The error fires exactly once then resolves on the next attempt.
+
     """
 
     def name(self) -> Text:
@@ -314,21 +359,30 @@ class ActionHandleBooking(Action):
         )
 
         # -------------------------------------------------------
-        # SYSTEM B ERROR — trouble confirming booking on first attempt
-        # Fires once (error_fired=False), then resolves on retry.
+        # SYSTEM B ERROR — simulated date parsing failure
+        #
+        # Fires on the first booking attempt only.
+        # The system presents the full summary correctly, then claims
+        # it cannot process the date and asks the user to re-confirm
+        # it. This is realistic — date parsing failures are common in
+        # real SDS — and hits late in the dialog, close to the 'end'
+        # component of the Peak-End Rule.
+        # Resolves cleanly on the second attempt.
         # -------------------------------------------------------
         if system_version == "B" and not error_fired:
             dispatcher.utter_message(
-                text="I'm sorry, I'm having trouble processing your booking right now. "
-                     "Could you confirm the details again? "
-                     f"That was {restaurant} on {date} at {time} for {num_people} people?"
+                text=f"I have {restaurant} on {date} at {time} "
+                     f"for {num_people} people. "
+                     f"However, I'm having trouble processing the date \"{date}\". "
+                     f"Could you confirm the date once more?"
             )
             return [
                 SlotSet("awaiting_booking_start", False),
+                SlotSet("date", None),
                 SlotSet("error_fired", True),
             ]
-
-        # Normal confirmation — both System A and System B (after error)
+ 
+        # Normal confirmation — System A and System B after error resolves
         dispatcher.utter_message(
             text=f"To confirm: {restaurant} on {date} at {time} "
                  f"for {num_people} people — shall I go ahead?"
@@ -337,3 +391,44 @@ class ActionHandleBooking(Action):
             SlotSet("awaiting_booking_start", False),
             SlotSet("error_fired", False),
         ]
+
+
+class ActionHandleFormFallback(Action):
+    """
+    Fires when the user says something unrecognised while a form is active.
+    Re-prompts for the current slot without breaking the form loop.
+    """
+
+    def name(self) -> Text:
+        return "action_handle_form_fallback"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+
+        requested_slot = tracker.get_slot("requested_slot")
+
+        reprompts = {
+            "district": "I didn't understand that. Which district are you looking in? "
+                        "For example: Mitte, Kreuzberg, or Prenzlauer Berg.",
+            "cuisine":  "I didn't catch that cuisine. What kind of food are you in the mood for? "
+                        "For example: Italian, Japanese, or German.",
+            "food_preference": "I didn't understand that preference. "
+                               "You can say vegan, vegetarian, halal, gluten free, or no preference.",
+            "date":     "I didn't catch that date. Could you say it again? "
+                        "For example: next Monday, or the 15th of September.",
+            "time":     "I didn't catch that time. Could you say it again? "
+                        "For example: 7pm, half past six, or 19:00.",
+            "num_people": "I need a number for the party size. "
+                          "How many people will be dining?",
+        }
+
+        message = reprompts.get(
+            requested_slot,
+            "I didn't understand that. Could you rephrase?"
+        )
+        dispatcher.utter_message(text=message)
+        return []

@@ -102,7 +102,7 @@ slots:
 
 responses:
   utter_greet:
-    - text: "Hello! I can help you find and book a restaurant. Tell me if you want a recommendation to start"
+    - text: "Hello! I can help you find and book a restaurant. Let me know if you are ready to start!"
 
   utter_ask_district:
     - text: "Which district are you looking in?"
@@ -140,6 +140,7 @@ actions:
   - action_handle_booking
   - validate_recommendation_form
   - validate_booking_form
+  - action_handle_form_fallback
 
 forms:
   recommendation_form:

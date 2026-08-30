@@ -88,15 +88,28 @@ nlu:
     - A recommendation would be great
     - Please recommend me something 
     - Recommend me something 
+    - Let's start
+    - I want to start 
+    - Let's begin 
+    - I'm ready 
+    - We can start
+    - I want to begin
 
 - intent: provide_district
   examples: |
     - [Mitte](district)
+    - [Friedrichshein](district)
     - [Charlottenburg](district)
+    - [Wilmersdorf](district)
+    - [Neuköln](district)
     - [Steglitz](district)
     - [Spandau](district)
     - [Prenzlauer Berg](district)
     - [Tempelhof](district)
+    - [Lichtenberg](district)
+    - [Marzahn](district)
+    - [Treptow](district)
+    - [Reinickendorf](district)
     - [Schöneberg](district)
     - [Kreuzberg](district)
     - [Pankow](district)
@@ -270,6 +283,10 @@ nlu:
     - At [7](time)
     - At [7](time) in the evening
     - At [7](time) o'clock
+    - [seven](time)
+    - At [seven](time) pm
+    - At [seven](time) in the evening
+    - At [seven](time) o'clock
     - Around [7](time)
     - [7](time) would be great
     - [7](time) works for me 
@@ -286,6 +303,10 @@ nlu:
     - lets do [6](time)
     - how about [6](time)
     - Is there something free for [6](time)?
+    - [six](time)
+    - At [six](time)
+    - At [six](time) in the evening
+    - At [six](time) o'clock
     - [5](time)
     - At [5](time)
     - At [5](time) in the evening
@@ -296,6 +317,10 @@ nlu:
     - lets do [5](time)
     - how about [5](time)
     - Is there something free for [5](time)?
+    - [five](time)
+    - At [five](time)
+    - At [five](time) in the evening
+    - At [five](time) o'clock
     - [7pm](time)
     - [19:00](time)
     - [8 o'clock](time)
@@ -307,6 +332,20 @@ nlu:
     - [half past 8](time)
     - [nine o'clock](time)
     - [6:30 pm](time)
+    - [8](time)
+    - At [8](time)
+    - At [8](time) in the evening
+    - At [8](time) o'clock
+    - [eight](time)
+    - At [eight](time) pm
+    - At [eight](time) in the evening
+    - At [eight](time) o'clock
+    - Around [8](time)
+    - [8](time) would be great
+    - [8](time) works for me 
+    - lets do [8](time)
+    - how about [8](time)
+    - Is there something free for [8](time)?
   
 - intent: provide_date
   examples: |

@@ -79,6 +79,10 @@ rules:
     condition:
       - slot_was_set:
           - awaiting_booking_start: false
+      - slot_was_set:
+          - error_fired: false
+      - slot_was_set:
+          - restaurant_name: Beta Test - Food Creation  # any non-null
     steps:
       - intent: affirm
       - action: utter_booking_confirmed
@@ -88,9 +92,114 @@ rules:
     condition:
       - slot_was_set:
           - awaiting_booking_start: false
+      - slot_was_set:
+        - error_fired: false
     steps:
       - intent: deny
       - action: utter_booking_cancelled
+
+  # ============================================================
+  # Error injection
+  # ============================================================
+
+  - rule: re-enter booking form after System B error
+    condition:
+      - slot_was_set:
+          - error_fired: true
+      - slot_was_set:
+          - awaiting_booking_start: false
+    steps:
+      - intent: provide_date
+      - action: booking_form
+      - active_loop: booking_form
+
+
+  # ============================================================
+  # Forms: fallback handling
+  # ============================================================
+  - rule: handle unexpected input inside recommendation form
+    condition:
+      - active_loop: recommendation_form
+    steps:
+      - intent: nlu_fallback
+      - action: action_handle_form_fallback
+      - active_loop: recommendation_form
+
+  - rule: handle unexpected input inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: nlu_fallback
+      - action: action_handle_form_fallback
+      - active_loop: booking_form
+  
+  - rule: handle deny inside recommendation form
+    condition:
+      - active_loop: recommendation_form
+    steps:
+      - intent: deny
+      - action: recommendation_form
+      - active_loop: recommendation_form
+
+  - rule: handle provide_time inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: provide_time
+      - action: booking_form
+      - active_loop: booking_form
+
+  - rule: handle provide_date inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: provide_date
+      - action: booking_form
+      - active_loop: booking_form
+
+  - rule: handle provide_party_size inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: provide_party_size
+      - action: booking_form
+      - active_loop: booking_form
+  
+  - rule: handle deny inside booking form
+    condition:
+      - active_loop: booking_form
+      - slot_was_set:
+          - awaiting_booking_start: true
+    steps:
+      - intent: deny
+      - action: action_handle_form_fallback
+      - active_loop: booking_form
+  
+  - rule: handle affirm inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: affirm
+      - action: booking_form
+      - active_loop: booking_form
+
+  - rule: handle party size intent as recommendation choice
+    condition:
+      - slot_was_set:
+          - awaiting_booking_start: false
+    steps:
+      - intent: provide_party_size
+      - action: action_handle_recommendation_choice
+
+  - rule: handle affirm as recommendation choice
+    condition:
+      - slot_was_set:
+          - awaiting_booking_start: false
+      - slot_was_set:
+          - error_fired: false
+    steps:
+      - intent: affirm
+      - action: action_handle_recommendation_choice
 
   # ============================================================
   # GLOBAL
