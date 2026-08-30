@@ -148,6 +148,7 @@ responses:
     - text: "Goodbye! Hope to see you again soon."
 
 actions:
+  - action_session_start
   - action_give_recommendations
   - action_handle_recommendation_choice
   - action_handle_booking
@@ -167,3 +168,7 @@ forms:
       - date
       - time
       - num_people
+
+session_config:
+  session_expiration_time: 60    # minutes — adjust to your study session length
+  carry_over_slots_to_new_session: false

@@ -111,6 +111,14 @@ rules:
       - intent: deny
       - action: action_give_recommendations
 
+  - rule: handle nlu_fallback as recommendation choice
+    condition:
+      - slot_was_set:
+          - awaiting_restaurant_choice: true
+    steps:
+      - intent: nlu_fallback
+      - action: action_handle_recommendation_choice
+
   # ============================================================
   # BOOKING FORM
   # Collects date, time, num_people.

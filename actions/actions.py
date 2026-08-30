@@ -1,12 +1,69 @@
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
-from rasa_sdk.events import SlotSet
+from rasa_sdk.events import SlotSet, SessionStarted, ActionExecuted
 from rasa_sdk.forms import FormValidationAction
 from rasa_sdk.types import DomainDict
 from typing import Any, Dict, List, Text
+
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+
+class ActionSessionStart(Action):
+    """
+    Fires at the start of every conversation.
+    Reads system_version from session metadata sent by FastAPI
+    and sets it as a slot so the rest of the dialog can use it.
+    
+    FastAPI sends the metadata in the session start payload:
+    {
+        "sender": "participant_123",
+        "session_metadata": {"system_version": "A"}
+    }
+    """
+
+    # ============================================================
+    # Override action session start function
+    # ============================================================
+
+    def name(self) -> Text:
+        return "action_session_start"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+
+        # Standard session start events — always required
+        events = [SessionStarted(), ActionExecuted("action_listen")]
+
+        # -------------------------------------------------------
+        # TEMPORARY — hardcoded for testing, remove before study
+        system_version = "A"  # switch to "B" to test System B
+        events.append(SlotSet("system_version", system_version))
+        logger.info(f"Session started | system_version={system_version} [HARDCODED]")
+        # de-comment """ for fastAPI
+
+        """ 
+        # Read system_version from metadata passed by FastAPI
+        metadata = tracker.get_slot("session_started_metadata") or {}
+        system_version = metadata.get("system_version")
+
+        if system_version in ("A", "B"):
+            events.append(SlotSet("system_version", system_version))
+            logger.info(f"Session started | system_version={system_version}")
+        else:
+            logger.warning(
+                f"No valid system_version in session metadata: {metadata}. "
+                f"Error injection will not fire."
+            )
+        """
+
+        return events
 
 # ============================================================
 # HELPER
