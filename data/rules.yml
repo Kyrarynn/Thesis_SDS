@@ -15,7 +15,7 @@ rules:
   # RECOMMENDATION FORM
   # Collects district, cuisine, food_preference.
   # System A error fires inside validate_recommendation_form
-  # (food_preference slot — simulates misunderstanding early in dialog)
+  # on the food_preference slot.
   # ============================================================
 
   - rule: start recommendation path
@@ -32,39 +32,89 @@ rules:
       - active_loop: null
       - action: action_give_recommendations
 
+  - rule: handle provide_food_preference inside recommendation form
+    condition:
+      - active_loop: recommendation_form
+    steps:
+      - intent: provide_food_preference
+      - action: recommendation_form
+      - active_loop: recommendation_form
+
+  # "no" inside recommendation form = no dietary preference, not a cancellation
+  - rule: handle deny inside recommendation form
+    condition:
+      - active_loop: recommendation_form
+    steps:
+      - intent: deny
+      - action: recommendation_form
+      - active_loop: recommendation_form
+
+  - rule: handle nlu_fallback inside recommendation form
+    condition:
+      - active_loop: recommendation_form
+    steps:
+      - intent: nlu_fallback
+      - action: action_handle_form_fallback
+      - active_loop: recommendation_form
+
   # ============================================================
   # RESTAURANT SELECTION
-  # User picks from the list; action sets restaurant_name
-  # and asks confirmation before booking form starts.
+  # awaiting_restaurant_choice=True is set by action_give_recommendations.
+  # All user inputs at this stage route to action_handle_recommendation_choice
+  # which sets restaurant_name and awaiting_booking_start=True.
   # ============================================================
 
-  - rule: user picks a recommendation
+  - rule: user picks a recommendation by name or number
+    condition:
+      - slot_was_set:
+          - awaiting_restaurant_choice: true
     steps:
       - intent: choose_recommendation
       - action: action_handle_recommendation_choice
 
-  - rule: user confirms restaurant to start booking
+  # "two", "the second one" etc. classified as provide_party_size — treat as choice
+  - rule: handle party size intent as recommendation choice
     condition:
       - slot_was_set:
-          - awaiting_booking_start: true
+          - awaiting_restaurant_choice: true
     steps:
+      - intent: provide_party_size
+      - action: action_handle_recommendation_choice
+
+  # "yes" after seeing the list = pick first / confirm shown restaurant
+  - rule: handle affirm as recommendation choice
+    condition:
+      - slot_was_set:
+          - awaiting_restaurant_choice: true
+    steps:
+      - intent: affirm
+      - action: action_handle_recommendation_choice
+
+  # ============================================================
+  # RESTAURANT CONFIRMATION
+  # Scoped by previous action rather than slot condition, because
+  # Rasa evaluates slot conditions before the triggering action
+  # commits its SlotSet events — making slot-based conditions
+  # unreliable here.
+  # ============================================================
+
+  - rule: user confirms restaurant — start booking form
+    steps:
+      - action: action_handle_recommendation_choice
       - intent: affirm
       - action: booking_form
       - active_loop: booking_form
 
-  - rule: user declines restaurant choice
-    condition:
-      - slot_was_set:
-          - awaiting_booking_start: true
+  - rule: user declines restaurant — re-show recommendations
     steps:
+      - action: action_handle_recommendation_choice
       - intent: deny
-      - action: action_give_recommendations    # re-show list so user can pick again
+      - action: action_give_recommendations
 
   # ============================================================
   # BOOKING FORM
   # Collects date, time, num_people.
-  # System B error fires inside action_handle_booking
-  # (booking confirmation — simulates trouble near end of dialog)
+  # System B error fires inside action_handle_booking.
   # ============================================================
 
   - rule: submit booking form
@@ -75,31 +125,59 @@ rules:
       - active_loop: null
       - action: action_handle_booking
 
-  - rule: user affirms booking confirmation
+  - rule: handle provide_date inside booking form
     condition:
-      - slot_was_set:
-          - awaiting_booking_start: false
-      - slot_was_set:
-          - error_fired: false
-      - slot_was_set:
-          - restaurant_name: Beta Test - Food Creation  # any non-null
+      - active_loop: booking_form
+    steps:
+      - intent: provide_date
+      - action: booking_form
+      - active_loop: booking_form
+
+  - rule: handle provide_time inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: provide_time
+      - action: booking_form
+      - active_loop: booking_form
+
+  - rule: handle provide_party_size inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: provide_party_size
+      - action: booking_form
+      - active_loop: booking_form
+
+  - rule: handle affirm inside booking form
+    condition:
+      - active_loop: booking_form
     steps:
       - intent: affirm
-      - action: utter_booking_confirmed
-      - action: utter_ask_restart
+      - action: booking_form
+      - active_loop: booking_form
 
-  - rule: user denies booking confirmation
+  # "no" inside booking form = nonsense input, re-prompt for current slot
+  - rule: handle deny inside booking form
     condition:
-      - slot_was_set:
-          - awaiting_booking_start: false
-      - slot_was_set:
-        - error_fired: false
+      - active_loop: booking_form
     steps:
       - intent: deny
-      - action: utter_booking_cancelled
+      - action: action_handle_form_fallback
+      - active_loop: booking_form
+
+  - rule: handle nlu_fallback inside booking form
+    condition:
+      - active_loop: booking_form
+    steps:
+      - intent: nlu_fallback
+      - action: action_handle_form_fallback
+      - active_loop: booking_form
 
   # ============================================================
-  # Error injection
+  # SYSTEM B ERROR RECOVERY
+  # After System B error: awaiting_booking_start=False, error_fired=True,
+  # date slot cleared. User must re-enter date to re-activate booking form.
   # ============================================================
 
   - rule: re-enter booking form after System B error
@@ -113,99 +191,34 @@ rules:
       - action: booking_form
       - active_loop: booking_form
 
-
   # ============================================================
-  # Forms: fallback handling
+  # BOOKING CONFIRMATION
+  # action_handle_booking sets awaiting_booking_confirmation=True
+  # and awaiting_booking_start=False when it sends the summary.
   # ============================================================
-  - rule: handle unexpected input inside recommendation form
-    condition:
-      - active_loop: recommendation_form
-    steps:
-      - intent: nlu_fallback
-      - action: action_handle_form_fallback
-      - active_loop: recommendation_form
 
-  - rule: handle unexpected input inside booking form
+  - rule: user affirms booking confirmation
     condition:
-      - active_loop: booking_form
-    steps:
-      - intent: nlu_fallback
-      - action: action_handle_form_fallback
-      - active_loop: booking_form
-  
-  - rule: handle deny inside recommendation form
-    condition:
-      - active_loop: recommendation_form
-    steps:
-      - intent: deny
-      - action: recommendation_form
-      - active_loop: recommendation_form
-
-  - rule: handle provide_time inside booking form
-    condition:
-      - active_loop: booking_form
-    steps:
-      - intent: provide_time
-      - action: booking_form
-      - active_loop: booking_form
-
-  - rule: handle provide_date inside booking form
-    condition:
-      - active_loop: booking_form
-    steps:
-      - intent: provide_date
-      - action: booking_form
-      - active_loop: booking_form
-
-  - rule: handle provide_party_size inside booking form
-    condition:
-      - active_loop: booking_form
-    steps:
-      - intent: provide_party_size
-      - action: booking_form
-      - active_loop: booking_form
-  
-  - rule: handle deny inside booking form
-    condition:
-      - active_loop: booking_form
       - slot_was_set:
-          - awaiting_booking_start: true
-    steps:
-      - intent: deny
-      - action: action_handle_form_fallback
-      - active_loop: booking_form
-  
-  - rule: handle affirm inside booking form
-    condition:
-      - active_loop: booking_form
+          - awaiting_booking_confirmation: true
     steps:
       - intent: affirm
-      - action: booking_form
-      - active_loop: booking_form
+      - action: utter_booking_confirmed
+      - action: utter_ask_restart
 
-  - rule: handle party size intent as recommendation choice
+  - rule: user denies booking confirmation
     condition:
       - slot_was_set:
-          - awaiting_booking_start: false
+          - awaiting_booking_confirmation: true
     steps:
-      - intent: provide_party_size
-      - action: action_handle_recommendation_choice
-
-  - rule: handle affirm as recommendation choice
-    condition:
-      - slot_was_set:
-          - awaiting_booking_start: false
-      - slot_was_set:
-          - error_fired: false
-    steps:
-      - intent: affirm
-      - action: action_handle_recommendation_choice
+      - intent: deny
+      - action: utter_booking_cancelled
 
   # ============================================================
   # GLOBAL
   # ============================================================
 
-  - rule: user stops
+  - rule: user stops at any point
     steps:
       - intent: stop
       - action: action_deactivate_loop

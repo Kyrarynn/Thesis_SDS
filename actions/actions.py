@@ -265,7 +265,11 @@ class ActionGiveRecommendations(Action):
             )
         )
 
-        return [SlotSet("recommendations", recommendations)]
+        return [
+            SlotSet("recommendations", recommendations),
+            #SlotSet("awaiting_booking_start", False),
+            SlotSet("awaiting_restaurant_choice", True),
+        ]
 
 
 class ActionHandleRecommendationChoice(Action):
@@ -321,6 +325,7 @@ class ActionHandleRecommendationChoice(Action):
         return [
             SlotSet("restaurant_name", chosen),
             SlotSet("awaiting_booking_start", True),
+            SlotSet("awaiting_restaurant_choice", False),
         ]
 
 
@@ -379,6 +384,7 @@ class ActionHandleBooking(Action):
             return [
                 SlotSet("awaiting_booking_start", False),
                 SlotSet("date", None),
+                SlotSet("awaiting_booking_confirmation", True),
                 SlotSet("error_fired", True),
             ]
  
@@ -390,6 +396,7 @@ class ActionHandleBooking(Action):
         return [
             SlotSet("awaiting_booking_start", False),
             SlotSet("error_fired", False),
+            SlotSet("awaiting_booking_confirmation", True)
         ]
 
 

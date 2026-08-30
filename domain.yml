@@ -35,6 +35,19 @@ slots:
     mappings:
       - type: custom
 
+  # for rules
+  awaiting_booking_confirmation:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: custom
+  
+  awaiting_restaurant_choice:
+    type: bool
+    initial_value: false
+    mappings:
+      - type: custom
+
   # Recommendation form slots
   district:
     type: text
