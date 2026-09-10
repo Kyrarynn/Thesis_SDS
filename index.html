@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Assistant Study</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    /* ── Setup panel ── */
+    #setup-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    #setup-panel label {
+      display: block;
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    #setup-panel input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    #start-btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #start-btn:hover { background: #1d4ed8; }
+
+    /* ── Chat panel ── */
+    #chat-panel {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      max-width: 680px;
+      height: calc(100vh - 80px);
+    }
+
+    #chat-log {
+      flex: 1;
+      overflow-y: auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 12px;
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .bubble.user {
+      background: #2563eb;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bubble.bot {
+      background: #f0f0f0;
+      color: #222;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* ── Rating widget ── */
+    .rating-block {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+      color: #555;
+    }
+
+    .rating-block p { margin-bottom: 8px; }
+
+    .stars {
+      display: flex;
+      gap: 8px;
+    }
+
+    .star-btn {
+      background: none;
+      border: 2px solid #d1d5db;
+      border-radius: 6px;
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #374151;
+      font-weight: 600;
+      transition: all 0.1s;
+    }
+
+    .star-btn:hover, .star-btn.selected {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: white;
+    }
+
+    /* ── Mic button ── */
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #mic-btn {
+      flex: 1;
+      padding: 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    #mic-btn.listening {
+      background: #dc2626;
+      animation: pulse 1.2s infinite;
+    }
+
+    #mic-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    #status {
+      font-size: 0.8rem;
+      color: #888;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    #end-btn {
+      padding: 14px 20px;
+      background: #6b7280;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    #end-btn:hover { background: #4b5563; }
+  </style>
+</head>
+<body>
+
+<!-- ── Setup ── -->
+<div id="setup-panel">
+  <h1>Restaurant Booking Assistant</h1>
+  <label for="participant-number">Participant number</label>
+  <input type="number" id="participant-number" min="1" placeholder="e.g. 1">
+  <button id="start-btn" onclick="startSession()">Start session</button>
+  <p id="setup-error" style="color:red;font-size:0.85rem;margin-top:8px;"></p>
+</div>
+
+<!-- ── Chat ── -->
+<div id="chat-panel">
+  <div id="chat-log"></div>
+  <div id="controls">
+    <button id="mic-btn" onclick="startListening()">🎤 Hold to speak</button>
+    <button id="end-btn" onclick="endSession()">End</button>
+  </div>
+  <p id="status"></p>
+</div>
+
+<script>
+// ── State ──
+let participantId = null;
+let turnIndex = 0;
+let pendingRating = false;
+let recognition = null;
+let synth = window.speechSynthesis;
+
+// ── Session start ──
+async function startSession() {
+  const num = parseInt(document.getElementById('participant-number').value);
+  if (!num || num < 1) {
+    document.getElementById('setup-error').textContent = 'Please enter a valid participant number.';
+    return;
+  }
+
+  const res = await fetch('/session/start', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({participant_number: num}),
+  });
+
+  if (!res.ok) {
+    document.getElementById('setup-error').textContent = 'Could not connect to server. Is Rasa running?';
+    return;
+  }
+
+  const data = await res.json();
+  participantId = data.participant_id;
+
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('chat-panel').style.display = 'flex';
+
+  setStatus('Session started. Press the microphone to speak.');
+}
+
+// ── Speech recognition ──
+function startListening() {
+  if (pendingRating) {
+    setStatus('Please rate the last response before continuing.');
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    setStatus('Speech recognition not supported in this browser. Use Chrome.');
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-GB';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  const micBtn = document.getElementById('mic-btn');
+  micBtn.classList.add('listening');
+  micBtn.textContent = '🔴 Listening…';
+  micBtn.disabled = true;
+
+  recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    addBubble(transcript, 'user');
+    await sendMessage(transcript);
+  };
+
+  recognition.onerror = (event) => {
+    setStatus(`Recognition error: ${event.error}`);
+    resetMic();
+  };
+
+  recognition.onend = () => resetMic();
+  recognition.start();
+}
+
+function resetMic() {
+  const micBtn = document.getElementById('mic-btn');
+  micBtn.classList.remove('listening');
+  micBtn.textContent = '🎤 Hold to speak';
+  micBtn.disabled = false;
+}
+
+// ── Send message to FastAPI / Rasa ──
+async function sendMessage(text) {
+  micBtn_disable(true);
+  setStatus('Processing…');
+
+  const res = await fetch('/message', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({participant_id: participantId, user_text: text}),
+  });
+
+  const data = await res.json();
+  const botText = data.bot_text;
+
+  if (botText) {
+    addBubble(botText, 'bot');
+    speak(botText, () => {
+      // After TTS finishes, show rating widget
+      showRating(turnIndex);
+      turnIndex++;
+    });
+  }
+
+  setStatus('');
+  micBtn_disable(false);
+}
+
+// ── TTS ──
+function speak(text, onDone) {
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-GB';
+  utt.rate = 0.95;
+  utt.onend = onDone;
+  synth.speak(utt);
+}
+
+// ── IQ rating widget ──
+function showRating(index) {
+  pendingRating = true;
+  micBtn_disable(true);
+
+  const block = document.createElement('div');
+  block.className = 'rating-block';
+  block.id = `rating-${index}`;
+  block.innerHTML = `
+    <p>How well did the system understand and respond? (1 = very poor, 5 = very good)</p>
+    <div class="stars">
+      ${[1,2,3,4,5].map(n =>
+        `<button class="star-btn" onclick="submitRating(${index}, ${n}, this)">${n}</button>`
+      ).join('')}
+    </div>
+  `;
+  document.getElementById('chat-log').appendChild(block);
+  scrollToBottom();
+}
+
+async function submitRating(turnIdx, rating, btn) {
+  // Highlight selected button
+  btn.closest('.stars').querySelectorAll('.star-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  await fetch('/rating', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      participant_id: participantId,
+      turn_index: turnIdx,
+      rating: rating,
+    }),
+  });
+
+  // Lock the rating widget
+  btn.closest('.rating-block').querySelectorAll('.star-btn').forEach(b => b.disabled = true);
+
+  pendingRating = false;
+  micBtn_disable(false);
+  setStatus('Rating submitted. You can speak again.');
+}
+
+// ── End session ──
+async function endSession() {
+  if (!confirm('End the session?')) return;
+
+  await fetch(`/session/end?participant_id=${participantId}`, {method: 'POST'});
+
+  document.getElementById('chat-panel').innerHTML =
+    '<p style="text-align:center;color:#555;margin-top:40px;">Session complete. Thank you!</p>';
+}
+
+// ── Helpers ──
+function addBubble(text, sender) {
+  const div = document.createElement('div');
+  div.className = `bubble ${sender}`;
+  div.textContent = text;
+  document.getElementById('chat-log').appendChild(div);
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  const log = document.getElementById('chat-log');
+  log.scrollTop = log.scrollHeight;
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+function micBtn_disable(disabled) {
+  document.getElementById('mic-btn').disabled = disabled;
+}
+</script>
+</body>
+</html>
