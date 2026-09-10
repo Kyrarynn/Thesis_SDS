@@ -43,12 +43,15 @@ class ActionSessionStart(Action):
 
         # -------------------------------------------------------
         # TEMPORARY — hardcoded for testing, remove before study
-        system_version = "A"  # switch to "B" to test System B
+        """ 
+        system_version = "B"  # switch to "A" / "B" to test the other system 
         events.append(SlotSet("system_version", system_version))
         logger.info(f"Session started | system_version={system_version} [HARDCODED]")
+        """
         # de-comment """ for fastAPI
 
         """ 
+        """
         # Read system_version from metadata passed by FastAPI
         metadata = tracker.get_slot("session_started_metadata") or {}
         system_version = metadata.get("system_version")
@@ -61,7 +64,6 @@ class ActionSessionStart(Action):
                 f"No valid system_version in session metadata: {metadata}. "
                 f"Error injection will not fire."
             )
-        """
 
         return events
 

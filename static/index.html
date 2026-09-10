@@ -206,6 +206,12 @@
   <h1>Restaurant Booking Assistant</h1>
   <label for="participant-number">Participant number</label>
   <input type="number" id="participant-number" min="1" placeholder="e.g. 1">
+  <label for="system-version">System version</label>
+  <select id="system-version" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:1rem;margin-bottom:20px;">
+    <option value="A">A — early error</option>
+    <option value="B">B — late error</option>
+  </select>
+
   <button id="start-btn" onclick="startSession()">Start session</button>
   <p id="setup-error" style="color:red;font-size:0.85rem;margin-top:8px;"></p>
 </div>
@@ -239,7 +245,10 @@ async function startSession() {
   const res = await fetch('/session/start', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({participant_number: num}),
+    body: JSON.stringify({
+      participant_number: num,
+      system_version: document.getElementById('system-version').value
+    }),
   });
 
   if (!res.ok) {
@@ -253,7 +262,7 @@ async function startSession() {
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('chat-panel').style.display = 'flex';
 
-  setStatus('Session started. Press the microphone to speak.');
+  setStatus('Session started. Press the button to speak.');
 }
 
 // ── Speech recognition ──
@@ -276,7 +285,7 @@ function startListening() {
 
   const micBtn = document.getElementById('mic-btn');
   micBtn.classList.add('listening');
-  micBtn.textContent = '🔴 Listening…';
+  micBtn.textContent = 'Listening…';
   micBtn.disabled = true;
 
   recognition.onresult = async (event) => {
@@ -297,7 +306,7 @@ function startListening() {
 function resetMic() {
   const micBtn = document.getElementById('mic-btn');
   micBtn.classList.remove('listening');
-  micBtn.textContent = '🎤 Hold to speak';
+  micBtn.textContent = 'Hold to speak';
   micBtn.disabled = false;
 }
 

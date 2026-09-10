@@ -55,14 +55,8 @@ async def shutdown():
 
 # ============================================================
 # COUNTERBALANCING
-# Simple alternating assignment: odd participant numbers → A,
-# even → B. Replace with a proper randomisation list for the
-# actual study if needed.
+# Alternate between system version A and B starting order by hand
 # ============================================================
-
-def assign_system_version(participant_number: int) -> str:
-    return "A" if participant_number % 2 != 0 else "B"
-
 
 # ============================================================
 # REQUEST / RESPONSE MODELS
@@ -70,6 +64,7 @@ def assign_system_version(participant_number: int) -> str:
 
 class StartSessionRequest(BaseModel):
     participant_number: int          # sequential number assigned by researcher
+    system_version: str    # researcher passes "A" or "B" explicitly
 
 class MessageRequest(BaseModel):
     participant_id: str
@@ -93,7 +88,9 @@ async def start_session(req: StartSessionRequest):
     with the assigned system_version.
     """
     participant_id = str(uuid.uuid4())
-    system_version = assign_system_version(req.participant_number)
+    if req.system_version not in ("A", "B"):
+        raise HTTPException(status_code=400, detail="system_version must be 'A' or 'B'")
+    system_version = req.system_version
     start_time = datetime.now(timezone.utc)
 
     # Create session document
