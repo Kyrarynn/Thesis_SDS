@@ -208,8 +208,8 @@
   <input type="number" id="participant-number" min="1" placeholder="e.g. 1">
   <label for="system-version">System version</label>
   <select id="system-version" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:1rem;margin-bottom:20px;">
-    <option value="A">A — early error</option>
-    <option value="B">B — late error</option>
+    <option value="A">A: early error</option>
+    <option value="B">B: late error</option>
   </select>
 
   <button id="start-btn" onclick="startSession()">Start session</button>
@@ -220,7 +220,7 @@
 <div id="chat-panel">
   <div id="chat-log"></div>
   <div id="controls">
-    <button id="mic-btn" onclick="startListening()">🎤 Hold to speak</button>
+    <button id="mic-btn" onclick="startListening()">Hold to speak</button>
     <button id="end-btn" onclick="endSession()">End</button>
   </div>
   <p id="status"></p>
