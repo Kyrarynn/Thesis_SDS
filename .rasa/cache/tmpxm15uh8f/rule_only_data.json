@@ -1,0 +1,12 @@
+{
+  "rule_only_slots": [
+    "awaiting_booking_confirmation",
+    "awaiting_restaurant_choice",
+    "error_fired",
+    "awaiting_booking_start"
+  ],
+  "rule_only_loops": [
+    "booking_form",
+    "recommendation_form"
+  ]
+}

@@ -79,7 +79,14 @@ def get_last_user_text(tracker: Tracker) -> str:
         if event.get("event") == "user":
             return event.get("text", "").strip()
     return ""
- 
+
+# reset function
+class ActionResetAfterBooking(Action):
+    def name(self) -> Text:
+        return "action_reset_after_booking"
+
+    def run(self, dispatcher, tracker, domain):
+        return [SlotSet("awaiting_booking_confirmation", False)]
 
 # ============================================================
 # FORM VALIDATORS

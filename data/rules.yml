@@ -10,6 +10,11 @@ rules:
     steps:
       - intent: greet
       - action: utter_greet
+  
+  - rule: handle nlu_fallback at top level
+    steps:
+      - intent: nlu_fallback
+      - action: utter_greet
 
   # ============================================================
   # RECOMMENDATION FORM
@@ -213,6 +218,7 @@ rules:
       - intent: affirm
       - action: utter_booking_confirmed
       - action: utter_ask_restart
+      - action: action_reset_after_booking
 
   - rule: user denies booking confirmation
     condition:
@@ -229,6 +235,13 @@ rules:
   - rule: user stops at any point
     steps:
       - intent: stop
+      - action: action_deactivate_loop
+      - active_loop: null
+      - action: utter_goodbye
+
+  - rule: user ends interaction
+    steps:
+      - intent: goodbye
       - action: action_deactivate_loop
       - active_loop: null
       - action: utter_goodbye

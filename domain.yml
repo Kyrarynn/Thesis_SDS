@@ -13,6 +13,7 @@ intents:
   - affirm
   - deny
   - stop
+  - goodbye
 
 entities:
   - district
@@ -155,6 +156,7 @@ actions:
   - validate_recommendation_form
   - validate_booking_form
   - action_handle_form_fallback
+  - action_reset_after_booking
 
 forms:
   recommendation_form:

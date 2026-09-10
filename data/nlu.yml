@@ -20,13 +20,18 @@ nlu:
   examples: |
     - bye
     - goodbye
-    - see you later
-    - that's all, thanks
-    - thanks, bye
-    - chiao
-    - tschüss
-    - thanks, goodbye
-    - see you
+    - no thats it
+    - no that's it  
+    - no thank you
+    - no thanks
+    - that's all
+    - all done
+    - we're done
+    - I'm done
+    - that'll be all
+
+- intent: stop
+  examples: |
     - end session
     - exit
     - stop
@@ -36,6 +41,9 @@ nlu:
     - No, stop please 
     - Stop please 
     - Stop what you are doing
+    - restart 
+    - I want to restart
+    - Go back to the beginning 
 
 - intent: affirm
   examples: |
@@ -94,6 +102,7 @@ nlu:
     - I'm ready 
     - We can start
     - I want to begin
+    - Lets start
 
 - intent: provide_district
   examples: |
@@ -450,45 +459,4 @@ nlu:
     - a table for [two](num_people)
     - there will be [three](num_people) of us
 
-- intent: choose_own_restaurant
-  examples: |
-    - I have a place in mind
-    - I know where I want to eat
-    - I know a restaurant
-    - I know a place
-    - I already know where I want to eat
-    - I already have a place in mind
-    - I want to eat at a specific restaurant
-    - I want to eat at a place I know 
-    - I don't need a recommendation
-    - I don't need advice 
-    - I want to book a restaurant
-    - I want to make a reservation 
-
-- intent: provide_restaurant_name
-  examples: |
-    - It's called XXXX
-    - The name is XXXX
-    - XXXXX
-    - I want to eat at XXXX
-    - I want to book a table at XXXX
-    - The place is called XXXX
-    - The restaurant is called XXXX
-    - The restaurants name is XXXXX
-
-- intent: restart
-  examples: |
-    - stop
-    - restart 
-    - cancel everything
-    - I want to restart
-    - I changed my mind, please restart
-    - I changed my mind 
-    - I want to go back to the beginning
-    - Go to the beginning
-    - Lets start again 
-    - Lets start fresh
-    - I want to do another booking
-    - I want another recommendation
-    - I want to do something else
 
