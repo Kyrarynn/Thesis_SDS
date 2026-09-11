@@ -37,6 +37,29 @@ WHISPER_MODEL = whisper.load_model("base")
 
 app = FastAPI(title="SDS Study API")
 
+#######
+# 
+#######
+from fastapi import Request
+from fastapi.responses import JSONResponse
+import traceback
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # Print traceback directly to console
+    print("=" * 50)
+    print("CRASH DETECTED IN FASTAPI:")
+    traceback.print_exc()
+    print("=" * 50)
+    
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "traceback": traceback.format_exc()}
+    )
+#######
+# 
+#######
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,7 +67,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger("uvicorn.error")
+# logger = logging.getLogger("uvicorn")
 
 
 # ============================================================
@@ -87,27 +111,35 @@ class RatingRequest(BaseModel):
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
     """
-    Receives a WebM audio blob from the browser,
+    Receives an audio blob from the browser,
     transcribes it locally using Whisper, and returns the text.
-    No audio data is sent to any external service.
     """
     suffix = ".webm"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(await audio.read())
+        contents = await audio.read()
+        
+        # Check if received audio is non-empty
+        if len(contents) == 0:
+            raise HTTPException(status_code=400, detail="Empty audio recording received.")
+            
+        tmp.write(contents)
         tmp_path = tmp.name
 
     try:
         result = WHISPER_MODEL.transcribe(
             tmp_path,
             language="en",
-            fp16=False,             # required on CPU-only machines
+            fp16=False,
         )
-        transcript = result["text"].strip()
+        transcript = result.get("text", "").strip()
         logger.info(f"Whisper transcript: {transcript}")
+        return {"text": transcript}
+    except Exception as e:
+        logger.error(f"Whisper processing failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Whisper error: {str(e)}")
     finally:
-        os.unlink(tmp_path)
-
-    return {"text": transcript}
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
 
 @app.post("/session/start")

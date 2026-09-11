@@ -253,7 +253,18 @@ async function startRecording() {
   audioChunks = [];
 
   const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-  mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+
+  let options = {};
+  if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+    options = { mimeType: 'audio/webm;codecs=opus' };
+  } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+    options = { mimeType: 'audio/webm' };
+  } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+    options = { mimeType: 'audio/mp4' };
+  }
+
+  mediaRecorder = new MediaRecorder(stream, options);
+  // mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
 
   mediaRecorder.ondataavailable = e => {
     if (e.data.size > 0) audioChunks.push(e.data);
@@ -294,11 +305,21 @@ async function processAudio() {
 
   let transcript = '';
   try {
-    const res  = await fetch('/transcribe', {method: 'POST', body: formData});
+    const res = await fetch('/transcribe', {method: 'POST', body: formData});
+    
+    if (!res.ok) {
+      const errText = await res.text(); // Get raw response text first
+      console.error('Server error response:', errText);
+      setStatus('Transcription failed on server. See console.');
+      resetMic();
+      return;
+    }
+
     const data = await res.json();
     transcript = data.text;
   } catch (e) {
-    setStatus('Transcription failed. Please try again.');
+    console.error('Network or parsing error:', e);
+    setStatus('Transcription failed. Check console.');
     resetMic();
     return;
   }
