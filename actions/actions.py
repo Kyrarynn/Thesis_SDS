@@ -48,12 +48,15 @@ class ActionSessionStart(Action):
         events.append(SlotSet("system_version", system_version))
         logger.info(f"Session started | system_version={system_version} [HARDCODED]")
         """
-        # de-comment """ for fastAPI
-
-        """ 
-        """
+        
         # Read system_version from metadata passed by FastAPI
+        """ 
         metadata = tracker.get_slot("session_started_metadata") or {}
+        """
+        # Extract metadata from the latest user message event
+        last_user_event = tracker.get_last_event_for("user")
+        metadata = last_user_event.get("metadata", {}) if last_user_event else {}
+
         system_version = metadata.get("system_version")
 
         if system_version in ("A", "B"):
