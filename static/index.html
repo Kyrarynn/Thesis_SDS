@@ -17,12 +17,7 @@
       padding: 24px 16px;
     }
 
-    h1 {
-      font-size: 1.2rem;
-      color: #333;
-      margin-bottom: 20px;
-      font-weight: 500;
-    }
+    h1 { font-size: 1.2rem; color: #333; margin-bottom: 20px; font-weight: 500; }
 
     /* ── Setup panel ── */
     #setup-panel {
@@ -34,14 +29,10 @@
       box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
 
-    #setup-panel label {
-      display: block;
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 6px;
-    }
+    #setup-panel label { display: block; font-size: 0.9rem; color: #555; margin-bottom: 6px; }
 
-    #setup-panel input {
+    #setup-panel input,
+    #setup-panel select {
       width: 100%;
       padding: 10px 14px;
       border: 1px solid #ddd;
@@ -117,10 +108,7 @@
 
     .rating-block p { margin-bottom: 8px; }
 
-    .stars {
-      display: flex;
-      gap: 8px;
-    }
+    .stars { display: flex; gap: 8px; }
 
     .star-btn {
       background: none;
@@ -141,12 +129,8 @@
       color: white;
     }
 
-    /* ── Mic button ── */
-    #controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    /* ── Controls ── */
+    #controls { display: flex; align-items: center; gap: 12px; }
 
     #mic-btn {
       flex: 1;
@@ -164,27 +148,16 @@
       transition: background 0.2s;
     }
 
-    #mic-btn.listening {
-      background: #dc2626;
-      animation: pulse 1.2s infinite;
-    }
-
-    #mic-btn:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
+    #mic-btn.recording { background: #dc2626; animation: pulse 1.2s infinite; }
+    #mic-btn.processing { background: #d97706; }
+    #mic-btn:disabled { background: #9ca3af; cursor: not-allowed; }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.7; }
     }
 
-    #status {
-      font-size: 0.8rem;
-      color: #888;
-      text-align: center;
-      margin-top: 6px;
-    }
+    #status { font-size: 0.8rem; color: #888; text-align: center; margin-top: 6px; }
 
     #end-btn {
       padding: 14px 20px;
@@ -204,10 +177,12 @@
 <!-- ── Setup ── -->
 <div id="setup-panel">
   <h1>Restaurant Booking Assistant</h1>
+
   <label for="participant-number">Participant number</label>
   <input type="number" id="participant-number" min="1" placeholder="e.g. 1">
+
   <label for="system-version">System version</label>
-  <select id="system-version" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:1rem;margin-bottom:20px;">
+  <select id="system-version">
     <option value="A">A: early error</option>
     <option value="B">B: late error</option>
   </select>
@@ -220,7 +195,9 @@
 <div id="chat-panel">
   <div id="chat-log"></div>
   <div id="controls">
-    <button id="mic-btn" onclick="startListening()">Hold to speak</button>
+    <button id="mic-btn" onmousedown="startRecording()" onmouseup="stopRecording()">
+      Hold to speak
+    </button>
     <button id="end-btn" onclick="endSession()">End</button>
   </div>
   <p id="status"></p>
@@ -228,15 +205,18 @@
 
 <script>
 // ── State ──
-let participantId = null;
-let turnIndex = 0;
-let pendingRating = false;
-let recognition = null;
-let synth = window.speechSynthesis;
+let participantId  = null;
+let turnIndex      = 0;
+let pendingRating  = false;
+let mediaRecorder  = null;
+let audioChunks    = [];
+let synth          = window.speechSynthesis;
 
 // ── Session start ──
 async function startSession() {
   const num = parseInt(document.getElementById('participant-number').value);
+  const ver = document.getElementById('system-version').value;
+
   if (!num || num < 1) {
     document.getElementById('setup-error').textContent = 'Please enter a valid participant number.';
     return;
@@ -245,14 +225,12 @@ async function startSession() {
   const res = await fetch('/session/start', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      participant_number: num,
-      system_version: document.getElementById('system-version').value
-    }),
+    body: JSON.stringify({participant_number: num, system_version: ver}),
   });
 
   if (!res.ok) {
-    document.getElementById('setup-error').textContent = 'Could not connect to server. Is Rasa running?';
+    document.getElementById('setup-error').textContent =
+      'Could not connect to server. Is Rasa running?';
     return;
   }
 
@@ -260,101 +238,123 @@ async function startSession() {
   participantId = data.participant_id;
 
   document.getElementById('setup-panel').style.display = 'none';
-  document.getElementById('chat-panel').style.display = 'flex';
+  document.getElementById('chat-panel').style.display  = 'flex';
 
-  setStatus('Session started. Press the button to speak.');
+  setStatus('Session started. Hold the microphone button to speak.');
 }
 
-// ── Speech recognition ──
-function startListening() {
+// ── Audio recording ──
+async function startRecording() {
   if (pendingRating) {
     setStatus('Please rate the last response before continuing.');
     return;
   }
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    setStatus('Speech recognition not supported in this browser. Use Chrome.');
+  audioChunks = [];
+
+  const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+  mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+
+  mediaRecorder.ondataavailable = e => {
+    if (e.data.size > 0) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    // Stop all tracks to release microphone
+    stream.getTracks().forEach(t => t.stop());
+    await processAudio();
+  };
+
+  mediaRecorder.start();
+
+  const micBtn = document.getElementById('mic-btn');
+  micBtn.classList.add('recording');
+  micBtn.textContent = 'Recording…';
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+
+    const micBtn = document.getElementById('mic-btn');
+    micBtn.classList.remove('recording');
+    micBtn.classList.add('processing');
+    micBtn.textContent = 'Transcribing…';
+    micBtn.disabled = true;
+  }
+}
+
+// ── Send audio to Whisper via FastAPI ──
+async function processAudio() {
+  setStatus('Transcribing…');
+
+  const blob     = new Blob(audioChunks, {type: 'audio/webm'});
+  const formData = new FormData();
+  formData.append('audio', blob, 'recording.webm');
+
+  let transcript = '';
+  try {
+    const res  = await fetch('/transcribe', {method: 'POST', body: formData});
+    const data = await res.json();
+    transcript = data.text;
+  } catch (e) {
+    setStatus('Transcription failed. Please try again.');
+    resetMic();
     return;
   }
 
-  recognition = new SpeechRecognition();
-  recognition.lang = 'en-GB';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  const micBtn = document.getElementById('mic-btn');
-  micBtn.classList.add('listening');
-  micBtn.textContent = 'Listening…';
-  micBtn.disabled = true;
-
-  recognition.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript;
-    addBubble(transcript, 'user');
-    await sendMessage(transcript);
-  };
-
-  recognition.onerror = (event) => {
-    setStatus(`Recognition error: ${event.error}`);
+  if (!transcript) {
+    setStatus('Nothing was heard. Please try again.');
     resetMic();
-  };
+    return;
+  }
 
-  recognition.onend = () => resetMic();
-  recognition.start();
+  addBubble(transcript, 'user');
+  await sendMessage(transcript);
 }
 
-function resetMic() {
-  const micBtn = document.getElementById('mic-btn');
-  micBtn.classList.remove('listening');
-  micBtn.textContent = 'Hold to speak';
-  micBtn.disabled = false;
-}
-
-// ── Send message to FastAPI / Rasa ──
+// ── Send transcribed text to Rasa via FastAPI ──
 async function sendMessage(text) {
-  micBtn_disable(true);
   setStatus('Processing…');
 
-  const res = await fetch('/message', {
-    method: 'POST',
+  const res  = await fetch('/message', {
+    method:  'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({participant_id: participantId, user_text: text}),
+    body:    JSON.stringify({participant_id: participantId, user_text: text}),
   });
 
-  const data = await res.json();
+  const data    = await res.json();
   const botText = data.bot_text;
 
   if (botText) {
     addBubble(botText, 'bot');
     speak(botText, () => {
-      // After TTS finishes, show rating widget
       showRating(turnIndex);
       turnIndex++;
     });
   }
 
   setStatus('');
-  micBtn_disable(false);
+  resetMic();
 }
 
 // ── TTS ──
 function speak(text, onDone) {
   synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-GB';
-  utt.rate = 0.95;
-  utt.onend = onDone;
+  const utt  = new SpeechSynthesisUtterance(text);
+  utt.lang   = 'en-GB';
+  utt.rate   = 0.95;
+  utt.onend  = onDone;
   synth.speak(utt);
 }
 
 // ── IQ rating widget ──
 function showRating(index) {
   pendingRating = true;
-  micBtn_disable(true);
+  document.getElementById('mic-btn').disabled = true;
 
   const block = document.createElement('div');
   block.className = 'rating-block';
-  block.id = `rating-${index}`;
   block.innerHTML = `
     <p>How well did the system understand and respond? (1 = very poor, 5 = very good)</p>
     <div class="stars">
@@ -368,26 +368,26 @@ function showRating(index) {
 }
 
 async function submitRating(turnIdx, rating, btn) {
-  // Highlight selected button
-  btn.closest('.stars').querySelectorAll('.star-btn').forEach(b => b.classList.remove('selected'));
+  btn.closest('.stars').querySelectorAll('.star-btn')
+     .forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
 
   await fetch('/rating', {
-    method: 'POST',
+    method:  'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
+    body:    JSON.stringify({
       participant_id: participantId,
-      turn_index: turnIdx,
-      rating: rating,
+      turn_index:     turnIdx,
+      rating:         rating,
     }),
   });
 
-  // Lock the rating widget
-  btn.closest('.rating-block').querySelectorAll('.star-btn').forEach(b => b.disabled = true);
+  btn.closest('.rating-block').querySelectorAll('.star-btn')
+     .forEach(b => b.disabled = true);
 
   pendingRating = false;
-  micBtn_disable(false);
-  setStatus('Rating submitted. You can speak again.');
+  resetMic();
+  setStatus('Rating submitted. Hold the button to speak again.');
 }
 
 // ── End session ──
@@ -397,13 +397,23 @@ async function endSession() {
   await fetch(`/session/end?participant_id=${participantId}`, {method: 'POST'});
 
   document.getElementById('chat-panel').innerHTML =
-    '<p style="text-align:center;color:#555;margin-top:40px;">Session complete. Thank you!</p>';
+    '<p style="text-align:center;color:#555;margin-top:80px;font-size:1.1rem;">' +
+    'Session complete. Thank you!<br><br>' +
+    '<span style="font-size:0.9rem;color:#888;">Please hand the device back to the researcher.</span>' +
+    '</p>';
 }
 
 // ── Helpers ──
+function resetMic() {
+  const micBtn = document.getElementById('mic-btn');
+  micBtn.classList.remove('recording', 'processing');
+  micBtn.textContent = 'Hold to speak';
+  micBtn.disabled = false;
+}
+
 function addBubble(text, sender) {
   const div = document.createElement('div');
-  div.className = `bubble ${sender}`;
+  div.className  = `bubble ${sender}`;
   div.textContent = text;
   document.getElementById('chat-log').appendChild(div);
   scrollToBottom();
@@ -416,10 +426,6 @@ function scrollToBottom() {
 
 function setStatus(msg) {
   document.getElementById('status').textContent = msg;
-}
-
-function micBtn_disable(disabled) {
-  document.getElementById('mic-btn').disabled = disabled;
 }
 </script>
 </body>

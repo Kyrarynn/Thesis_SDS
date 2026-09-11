@@ -2,13 +2,14 @@
 FastAPI orchestration layer for the SDS user study.
 
 Responsibilities:
-- Assign participants to System A or B (counterbalanced)
+- Assign participants to System A or B (researcher-controlled)
 - Start Rasa sessions with the correct system_version
-- Proxy messages between the UI and Rasa
+- Transcribe participant speech locally using Whisper (no data sent externally)
+- Proxy transcribed text to Rasa
 - Log all turns, timestamps, and IQ ratings to MongoDB
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,14 +19,21 @@ from datetime import datetime, timezone
 import httpx
 import uuid
 import logging
+import tempfile
+import os
+import whisper
 
 # ============================================================
 # CONFIG
 # ============================================================
 
-RASA_URL = "http://localhost:5005/webhooks/rest/webhook"
+RASA_URL  = "http://localhost:5005/webhooks/rest/webhook"
 MONGO_URI = "mongodb://localhost:27017"
 MONGO_DB  = "sds_study"
+
+# Load Whisper model once at startup — "base" is fast and accurate enough
+# Switch to "small" or "medium" if accuracy needs improvement
+WHISPER_MODEL = whisper.load_model("base")
 
 app = FastAPI(title="SDS Study API")
 
@@ -38,6 +46,7 @@ app.add_middleware(
 
 logger = logging.getLogger("uvicorn")
 
+
 # ============================================================
 # DATABASE
 # ============================================================
@@ -45,7 +54,7 @@ logger = logging.getLogger("uvicorn")
 @app.on_event("startup")
 async def startup():
     app.mongo = AsyncIOMotorClient(MONGO_URI)
-    app.db = app.mongo[MONGO_DB]
+    app.db    = app.mongo[MONGO_DB]
     logger.info("Connected to MongoDB")
 
 @app.on_event("shutdown")
@@ -54,31 +63,52 @@ async def shutdown():
 
 
 # ============================================================
-# COUNTERBALANCING
-# Alternate between system version A and B starting order by hand
-# ============================================================
-
-# ============================================================
 # REQUEST / RESPONSE MODELS
 # ============================================================
 
 class StartSessionRequest(BaseModel):
-    participant_number: int          # sequential number assigned by researcher
+    participant_number: int
     system_version: str    # researcher passes "A" or "B" explicitly
 
 class MessageRequest(BaseModel):
     participant_id: str
-    user_text: str                   # transcribed speech from Web Speech API
+    user_text: str
 
 class RatingRequest(BaseModel):
     participant_id: str
-    turn_index: int                  # which exchange is being rated (0-indexed)
-    rating: int                      # 1–5 IQ rating
+    turn_index: int
+    rating: int            # 1-5 IQ rating
 
 
 # ============================================================
 # ENDPOINTS
 # ============================================================
+
+@app.post("/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """
+    Receives a WebM audio blob from the browser,
+    transcribes it locally using Whisper, and returns the text.
+    No audio data is sent to any external service.
+    """
+    suffix = ".webm"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(await audio.read())
+        tmp_path = tmp.name
+
+    try:
+        result = WHISPER_MODEL.transcribe(
+            tmp_path,
+            language="en",
+            fp16=False,             # required on CPU-only machines
+        )
+        transcript = result["text"].strip()
+        logger.info(f"Whisper transcript: {transcript}")
+    finally:
+        os.unlink(tmp_path)
+
+    return {"text": transcript}
+
 
 @app.post("/session/start")
 async def start_session(req: StartSessionRequest):
@@ -87,24 +117,22 @@ async def start_session(req: StartSessionRequest):
     Creates a session document in MongoDB and starts a Rasa session
     with the assigned system_version.
     """
-    participant_id = str(uuid.uuid4())
     if req.system_version not in ("A", "B"):
         raise HTTPException(status_code=400, detail="system_version must be 'A' or 'B'")
-    system_version = req.system_version
-    start_time = datetime.now(timezone.utc)
 
-    # Create session document
+    participant_id = str(uuid.uuid4())
+    start_time     = datetime.now(timezone.utc)
+
     session_doc = {
         "participant_id":     participant_id,
         "participant_number": req.participant_number,
-        "system_version":     system_version,
+        "system_version":     req.system_version,
         "start_time":         start_time,
         "end_time":           None,
         "turns":              [],
     }
     await app.db.sessions.insert_one(session_doc)
 
-    # Start Rasa session with system_version in metadata
     async with httpx.AsyncClient() as client:
         try:
             await client.post(
@@ -112,7 +140,7 @@ async def start_session(req: StartSessionRequest):
                 json={
                     "sender":   participant_id,
                     "message":  "/session_start",
-                    "metadata": {"system_version": system_version},
+                    "metadata": {"system_version": req.system_version},
                 },
                 timeout=10.0,
             )
@@ -121,12 +149,12 @@ async def start_session(req: StartSessionRequest):
 
     logger.info(
         f"Session started | participant={req.participant_number} "
-        f"| id={participant_id} | system={system_version}"
+        f"| id={participant_id} | system={req.system_version}"
     )
 
     return {
         "participant_id": participant_id,
-        "system_version": system_version,
+        "system_version": req.system_version,
         "start_time":     start_time.isoformat(),
     }
 
@@ -134,12 +162,11 @@ async def start_session(req: StartSessionRequest):
 @app.post("/message")
 async def send_message(req: MessageRequest):
     """
-    Receives transcribed user speech, forwards to Rasa,
+    Receives transcribed text, forwards to Rasa,
     logs the turn with timestamps, and returns the bot response.
     """
     turn_start = datetime.now(timezone.utc)
 
-    # Forward to Rasa
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
@@ -151,40 +178,34 @@ async def send_message(req: MessageRequest):
         except httpx.RequestError as e:
             raise HTTPException(status_code=503, detail=f"Rasa unreachable: {e}")
 
-    turn_end = datetime.now(timezone.utc)
-
-    # Extract bot text from Rasa response list
+    turn_end  = datetime.now(timezone.utc)
     bot_texts = [r.get("text", "") for r in rasa_responses if r.get("text")]
     bot_text  = " ".join(bot_texts)
 
-    # Build turn document
     turn = {
-        "turn_start":   turn_start,
-        "turn_end":     turn_end,
-        "user_text":    req.user_text,
-        "bot_text":     bot_text,
-        "iq_rating":    None,          # filled in by /rating endpoint
+        "turn_start": turn_start,
+        "turn_end":   turn_end,
+        "user_text":  req.user_text,
+        "bot_text":   bot_text,
+        "iq_rating":  None,
     }
 
-    # Append turn to session document
     await app.db.sessions.update_one(
         {"participant_id": req.participant_id},
         {"$push": {"turns": turn}},
     )
 
     return {
-        "bot_text":     bot_text,
-        "turn_start":   turn_start.isoformat(),
-        "turn_end":     turn_end.isoformat(),
+        "bot_text":   bot_text,
+        "turn_start": turn_start.isoformat(),
+        "turn_end":   turn_end.isoformat(),
     }
 
 
 @app.post("/rating")
 async def submit_rating(req: RatingRequest):
     """
-    Stores the participant's IQ rating (1–5) for a specific turn.
-    Called immediately after the participant submits their rating
-    following each exchange.
+    Stores the participant's IQ rating (1-5) for a specific turn.
     """
     if not 1 <= req.rating <= 5:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
@@ -204,7 +225,6 @@ async def submit_rating(req: RatingRequest):
 async def end_session(participant_id: str):
     """
     Marks the session as complete with an end timestamp.
-    Called when the conversation ends or the participant finishes.
     """
     end_time = datetime.now(timezone.utc)
 
@@ -224,7 +244,6 @@ async def end_session(participant_id: str):
 async def get_session(participant_id: str):
     """
     Returns the full session log for a participant.
-    Useful for inspection and data export.
     """
     session = await app.db.sessions.find_one(
         {"participant_id": participant_id},

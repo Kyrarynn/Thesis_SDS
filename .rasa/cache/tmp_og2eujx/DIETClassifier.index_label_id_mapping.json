@@ -1,0 +1,15 @@
+{
+  "0": "affirm",
+  "1": "choose_recommendation",
+  "2": "choose_recommendation_path",
+  "3": "deny",
+  "4": "goodbye",
+  "5": "greet",
+  "6": "provide_cuisine",
+  "7": "provide_date",
+  "8": "provide_district",
+  "9": "provide_food_preference",
+  "10": "provide_party_size",
+  "11": "provide_time",
+  "12": "stop"
+}
