@@ -298,6 +298,129 @@ class ActionGiveRecommendations(Action):
     TODO: replace stub list with real data source.
     """
 
+    # Normalisation map: STT variants → correct display name
+    DISTRICT_NORMALISE = {
+        # Mitte
+        "mitteh": "Mitte",
+        "mitta": "Mitte",
+        # Friedrichshain
+        "friedrichshein": "Friedrichshain",
+        "friedrichschain": "Friedrichshain",
+        "friedrichs hain": "Friedrichshain",
+        "freedrichshain": "Friedrichshain",
+        "friedrichshayn": "Friedrichshain",
+        # Charlottenburg
+        "charlottenberg": "Charlottenburg",
+        "charlottenbourg": "Charlottenburg",
+        "charlottenbug": "Charlottenburg",
+        # Wilmersdorf
+        "wilmersdorff": "Wilmersdorf",
+        "wilmers dorf": "Wilmersdorf",
+        "wilmersdorg": "Wilmersdorf",
+        # Neukölln
+        "neukoelln": "Neukölln",
+        "neu köln": "Neukölln",
+        "neuköln": "Neukölln",
+        "neu coln": "Neukölln",
+        "noykeln": "Neukölln",
+        # Steglitz
+        "steaglitz": "Steglitz",
+        "steeglitz": "Steglitz",
+        "steglits": "Steglitz",
+        # Spandau
+        "spandow": "Spandau",
+        "spando": "Spandau",
+        "spanndau": "Spandau",
+        # Prenzlauer Berg
+        "prenzlower berg": "Prenzlauer Berg",
+        "prenzlaur berg": "Prenzlauer Berg",
+        "prentslauer berg": "Prenzlauer Berg",
+        "prenslauer berg": "Prenzlauer Berg",
+        # Tempelhof
+        "tempelhoff": "Tempelhof",
+        "tempelhove": "Tempelhof",
+        "templ hof": "Tempelhof",
+        # Lichtenberg
+        "lichtenbourg": "Lichtenberg",
+        "lichtenbug": "Lichtenberg",
+        "lichtenberk": "Lichtenberg",
+        # Marzahn
+        "marzan": "Marzahn",
+        "marzaan": "Marzahn",
+        "mar zahn": "Marzahn",
+        # Treptow
+        "treptau": "Treptow",
+        "treptov": "Treptow",
+        "trep tow": "Treptow",
+        # Reinickendorf
+        "reinickendorff": "Reinickendorf",
+        "reinickendorg": "Reinickendorf",
+        "rein ickendorf": "Reinickendorf",
+        "rhinickendorf": "Reinickendorf",
+        # Schöneberg
+        "schoeneberg": "Schöneberg",
+        "shoneberg": "Schöneberg",
+        "schoneberg": "Schöneberg",
+        "shoeneberg": "Schöneberg",
+        # Kreuzberg
+        "kroytzberg": "Kreuzberg",
+        "kroitzberg": "Kreuzberg",
+        "kreutzberg": "Kreuzberg",
+        "kreuzburg": "Kreuzberg",
+        # Pankow
+        "pankov": "Pankow",
+        "pankoff": "Pankow",
+        "pan kow": "Pankow",
+        # Hoppegarten
+        "hoppegarden": "Hoppegarten",
+        "hoppe garten": "Hoppegarten",
+        "hoppa garten": "Hoppegarten",
+    }
+
+    # recommendations per cuisine - hardcoded for reproducability
+    RESTAURANT_RECOMMENDATIONS = {
+    "italian": [
+        "Trattoria da Lorenzo",
+        "La Piazza Verde",
+        "Ristorante Bellavista",
+    ],
+    "german": [
+        "Zum Goldenen Bären",
+        "Die Alte Schmiede",
+        "Gasthaus Waldeck",
+    ],
+    "japanese": [
+        "Sakura Garden",
+        "Ramen Yoshi",
+        "Sushi Matsuri",
+    ],
+    "thai": [
+        "Bangkok Garden",
+        "Lotus Thai Kitchen",
+        "Sabai Sabai",
+    ],
+    "chinese": [
+        "Golden Dragon",
+        "Dim Sum House",
+        "Panda Garden",
+    ],
+    "indian": [
+        "Spice Garden",
+        "Bombay Dreams",
+        "Curry House Berlin",
+    ],
+    "mexican": [
+        "Casa Guadalupe",
+        "El Sombrero",
+        "La Cantina",
+    ],
+    "greek": [
+        "Olympia",
+        "Mykonos Restaurant",
+        "Acropolis Grill",
+    ],
+}
+
     def name(self) -> Text:
         return "action_give_recommendations"
 
@@ -308,17 +431,22 @@ class ActionGiveRecommendations(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
 
-        district = tracker.get_slot("district") or "your area"
+        district_raw = tracker.get_slot("district") or "your area"
         cuisine = tracker.get_slot("cuisine") or "various cuisines"
         food_preference = tracker.get_slot("food_preference") or ""
 
-        # --- STUB: replace with real restaurant data ---
-        recommendations = [
-            "Alpha Mouse Cheese Palace",
-            "Beta Test - Food Creation",
-            "Gamma Grandma Cooking",
-        ]
-        # -----------------------------------------------
+        # Normalise district display name
+        district = self.DISTRICT_NORMALISE.get(district_raw.lower(), district_raw)
+
+        # Look up restaurants by cuisine, fall back to generic list
+        cuisine_key = cuisine.lower()
+        all_options = self.RESTAURANT_RECOMMENDATIONS.get(
+            cuisine_key,
+            ["Restaurant Aurora", "Bistro Central", "Café Metropol"]  # generic fallback
+        )
+
+        # Always show exactly 3
+        recommendations = all_options[:3]
 
         pref_str = f" {food_preference}" if food_preference and food_preference != "none" else ""
         rec_list = "\n".join([f"  {i+1}. {r}" for i, r in enumerate(recommendations)])
@@ -327,13 +455,12 @@ class ActionGiveRecommendations(Action):
             text=(
                 f"Here are some{pref_str} {cuisine} restaurants in {district}:\n"
                 f"{rec_list}\n"
-                f"Which one would you like? You can say the name or the number."
+                f"Which one would you like? You can say the name or the number of the option you want to choose."
             )
         )
 
         return [
             SlotSet("recommendations", recommendations),
-            #SlotSet("awaiting_booking_start", False),
             SlotSet("awaiting_restaurant_choice", True),
         ]
 
