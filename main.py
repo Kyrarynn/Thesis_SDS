@@ -116,8 +116,8 @@ AUDIO_DIR.mkdir(exist_ok=True)
 
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...),
-                           participant_id: str = "",
-                           turn_index: int = 0):
+                           participant_id: str = Form(""),
+                           turn_index: int = Form(0)):
     """
     Receives an audio blob from the browser,
     transcribes it locally using Whisper, and returns the text.

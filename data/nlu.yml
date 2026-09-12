@@ -14,7 +14,7 @@ nlu:
     - hey
     - good morning
     - good evening
-    - hi there, I'd like to book a table
+    - hi there 
 
 - intent: goodbye
   examples: |
@@ -49,12 +49,25 @@ nlu:
   examples: |
     - yes
     - yes please
-    - that's right
-    - sounds good
     - sure
+    - go ahead
+    - that's right
     - correct
-    - okay
-    - ok
+    - sounds good
+    - let's do it
+    - yes let's go
+    - perfect
+    - great
+    - yeah
+    - yep
+    - absolutely
+    - definitely
+    - please do
+    - yes book it
+    - book it
+    - that works
+    - yes that's the one
+    - go for it
 
 - intent: deny
   examples: |

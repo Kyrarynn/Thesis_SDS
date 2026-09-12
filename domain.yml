@@ -119,7 +119,7 @@ responses:
     - text: "Hello! I can help you find and book a restaurant. Let me know if you are ready to start!"
 
   utter_ask_district:
-    - text: "Which district are you looking in?"
+    - text: "In which district of Berlin are you looking in?"
 
   utter_ask_cuisine:
     - text: "What cuisine are you in the mood for?"

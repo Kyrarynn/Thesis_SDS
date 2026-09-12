@@ -299,6 +299,9 @@ function stopRecording() {
 async function processAudio() {
   setStatus('Transcribing...');
 
+  // debugging:
+  console.log('participant_id at transcribe time:', participantId);
+
   const blob     = new Blob(audioChunks, {type: 'audio/webm'});
   const formData = new FormData();
   formData.append('audio', blob, 'recording.webm');
