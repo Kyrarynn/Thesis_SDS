@@ -302,6 +302,8 @@ async function processAudio() {
   const blob     = new Blob(audioChunks, {type: 'audio/webm'});
   const formData = new FormData();
   formData.append('audio', blob, 'recording.webm');
+  formData.append('participant_id', participantId);   // for audio saving
+  formData.append('turn_index', turnIndex);           // for audio saving 
 
   let transcript = '';
   try {
@@ -336,7 +338,7 @@ async function processAudio() {
 
 // ── Send transcribed text to Rasa via FastAPI ──
 async function sendMessage(text) {
-  setStatus('Processing…');
+  setStatus('Processing...');
 
   const res  = await fetch('/message', {
     method:  'POST',

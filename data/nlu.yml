@@ -522,5 +522,15 @@ nlu:
     - [five](num_people) of us
     - a table for [two](num_people)
     - there will be [three](num_people) of us
+    - We will be a group of [three](num_people)
+    - We will be a group of [two](num_people)
+    - We will be a group of [four](num_people)
+    - We will be a group of [five](num_people)
+    - We will be a group of [six](num_people)
+    - We will be a group of [3](num_people)
+    - We will be a group of [2](num_people)
+    - We will be a group of [4](num_people)
+    - We will be a group of [5](num_people)
+    - We will be a group of [6](num_people)
 
 

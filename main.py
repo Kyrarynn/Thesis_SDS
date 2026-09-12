@@ -9,7 +9,7 @@ Responsibilities:
 - Log all turns, timestamps, and IQ ratings to MongoDB
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +22,9 @@ import logging
 import tempfile
 import os
 import whisper
+# for audio saving 
+import shutil
+from pathlib import Path
 
 # ============================================================
 # CONFIG
@@ -108,11 +111,17 @@ class RatingRequest(BaseModel):
 # ENDPOINTS
 # ============================================================
 
+AUDIO_DIR = Path("audio_recordings")
+AUDIO_DIR.mkdir(exist_ok=True)
+
 @app.post("/transcribe")
-async def transcribe_audio(audio: UploadFile = File(...)):
+async def transcribe_audio(audio: UploadFile = File(...),
+                           participant_id: str = "",
+                           turn_index: int = 0):
     """
     Receives an audio blob from the browser,
     transcribes it locally using Whisper, and returns the text.
+    Saves audio per turn for analysis (OpenSMILE etc.)
     """
     suffix = ".webm"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -124,6 +133,12 @@ async def transcribe_audio(audio: UploadFile = File(...)):
             
         tmp.write(contents)
         tmp_path = tmp.name
+
+    # Save permanent copy for acoustic feature extraction
+    if participant_id:
+        save_path = AUDIO_DIR / f"{participant_id}_turn{turn_index}.webm"
+        shutil.copy(tmp_path, save_path)
+        logger.info(f"Audio saved: {save_path}")
 
     try:
         result = WHISPER_MODEL.transcribe(
