@@ -280,7 +280,7 @@ async function startRecording() {
 
   const micBtn = document.getElementById('mic-btn');
   micBtn.classList.add('recording');
-  micBtn.textContent = 'Recording…';
+  micBtn.textContent = 'Recording...';
 }
 
 function stopRecording() {
@@ -290,14 +290,14 @@ function stopRecording() {
     const micBtn = document.getElementById('mic-btn');
     micBtn.classList.remove('recording');
     micBtn.classList.add('processing');
-    micBtn.textContent = 'Transcribing…';
+    micBtn.textContent = 'Transcribing...';
     micBtn.disabled = true;
   }
 }
 
 // ── Send audio to Whisper via FastAPI ──
 async function processAudio() {
-  setStatus('Transcribing…');
+  setStatus('Transcribing...');
 
   const blob     = new Blob(audioChunks, {type: 'audio/webm'});
   const formData = new FormData();
