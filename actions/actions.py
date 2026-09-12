@@ -5,6 +5,7 @@ from rasa_sdk.forms import FormValidationAction
 from rasa_sdk.types import DomainDict
 from typing import Any, Dict, List, Text
 
+import re
 import logging
 
 logger = logging.getLogger(__name__)
@@ -490,25 +491,27 @@ class ActionHandleRecommendationChoice(Action):
 
         chosen = None
 
-        # Match by number or ordinal word
-        number_map = {
-            "1": 0, "one": 0, "first": 0, "a": 0,
-            "2": 1, "two": 1, "second": 1, "b": 1,
-            "3": 2, "three": 2, "third": 2, "c": 2,
-        }
-        for keyword, index in number_map.items():
-            if keyword in text.split() and index < len(recommendations):
-                chosen = recommendations[index]
+        # Match by restaurant name directly first — most specific
+        for rec in recommendations:
+            if rec.lower() in text:
+                chosen = rec
                 break
 
-        # Match by restaurant name directly
+        # Then match by ordinal/number — check more specific terms first
         if not chosen:
-            for rec in recommendations:
-                if rec.lower() in text:
-                    chosen = rec
+            # to avoid "one" in "second one" matching index 0
+            ordered_map = [
+                (["3", "three", "third", "c"], 2),
+                (["2", "two", "second", "b"], 1),
+                (["1", "first", "a"],         0),
+            ]
+            words = re.sub(r'[^\w\s]', '', text).split()
+            for keywords, index in ordered_map:
+                if any(kw in words for kw in keywords) and index < len(recommendations):
+                    chosen = recommendations[index]
                     break
 
-        # Fallback to first option
+        # Fallback to first only if nothing matched
         if not chosen and recommendations:
             chosen = recommendations[0]
 
