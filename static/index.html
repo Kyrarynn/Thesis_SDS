@@ -287,7 +287,11 @@ async function startRecording() {
 
   audioChunks = [];
 
-  const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+  // adjust to get raw audio data without echo and noise cancellation (deployed by browser otherwise)
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+  });
+  // const stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
   let options = {};
   if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
