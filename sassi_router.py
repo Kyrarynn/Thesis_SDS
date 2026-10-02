@@ -1,6 +1,11 @@
 """
 FastAPI router for the SASSI questionnaire.
 
+Integration in your existing app (e.g. main.py):
+
+    from sassi_router import router as sassi_router
+    app.include_router(sassi_router)
+
 Endpoints:
     GET  /sassi/items        -> item list + scale labels (used by sassi.html)
     POST /sassi/submit       -> store one completed questionnaire
@@ -25,7 +30,7 @@ from pymongo import MongoClient
 from sassi_items import ITEM_IDS, ITEMS, SCALE_LABELS, SUBSCALES, score
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME = os.getenv("MONGO_DB", "SDS_thesis")  # <- set to DB name
+DB_NAME = os.getenv("MONGO_DB", "sds_study")
 
 _client = MongoClient(MONGO_URI)
 collection = _client[DB_NAME]["sassi_responses"]

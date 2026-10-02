@@ -75,6 +75,13 @@ from demographics_router import router as demographics_router
 app.include_router(demographics_router)
 
 #######
+# Studienablauf (Startbildschirm -> Demografie -> System 1 -> SASSI 1 -> System 2 -> SASSI 2)
+#######
+
+from flow_router import router as flow_router
+app.include_router(flow_router)
+
+#######
 # 
 #######
 
@@ -111,6 +118,7 @@ async def shutdown():
 class StartSessionRequest(BaseModel):
     participant_number: int
     system_version: str    # researcher passes "A" or "B" explicitly
+    participant_code: str | None = None   # pseudonym from the flow, e.g. "P07"
 
 class MessageRequest(BaseModel):
     participant_id: str
@@ -132,11 +140,15 @@ AUDIO_DIR.mkdir(exist_ok=True)
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...),
                            participant_id: str = Form(""),
-                           turn_index: int = Form(0)):
+                           turn_index: int = Form(0),
+                           participant_code: str = Form(""),
+                           condition: str = Form("")):
     """
     Receives an audio blob from the browser,
     transcribes it locally using Whisper, and returns the text.
     Saves audio per turn for analysis (OpenSMILE etc.)
+    File name: P07_A_<session-id-prefix>_turn3.webm
+    (the session prefix keeps files apart if a conversation is restarted)
     """
     suffix = ".webm"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -151,7 +163,11 @@ async def transcribe_audio(audio: UploadFile = File(...),
 
     # Save permanent copy for acoustic feature extraction
     if participant_id:
-        save_path = AUDIO_DIR / f"{participant_id}_turn{turn_index}.webm"
+        if participant_code and condition:
+            filename = f"{participant_code}_{condition}_{participant_id[:8]}_turn{turn_index}.webm"
+        else:
+            filename = f"{participant_id}_turn{turn_index}.webm"
+        save_path = AUDIO_DIR / filename
         shutil.copy(tmp_path, save_path)
         logger.info(f"Audio saved: {save_path}")
 
@@ -186,7 +202,8 @@ async def start_session(req: StartSessionRequest):
     start_time     = datetime.now(timezone.utc)
 
     session_doc = {
-        "participant_id":     participant_id,
+        "participant_id":     participant_id,        # unique per conversation (Rasa sender id)
+        "participant_code":   req.participant_code,  # pseudonym, links to SASSI + demographics
         "participant_number": req.participant_number,
         "system_version":     req.system_version,
         "start_time":         start_time,
