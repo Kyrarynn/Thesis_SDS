@@ -68,6 +68,64 @@ nlu:
     - that works
     - yes that's the one
     - go for it
+    - ok
+    - okay
+    - okay sure
+    - ok sounds good
+    - alright
+    - all right
+    - yup
+    - yes exactly
+    - exactly
+    - yes that's correct
+    - yes that is correct
+    - that is correct
+    - yes it is
+    - of course
+    - sure thing
+    - sounds great
+    - that sounds great
+    - yes that sounds great
+    - continue
+    - yes continue
+    - please continue
+    - yes please continue
+    - go on
+    - yes go on
+    - proceed
+    - yes proceed
+    - please proceed
+    - let's continue
+    - yes let's continue
+    - I want to continue
+    - yes I want to continue
+    - I'd like to continue
+    - continue with the booking
+    - yes continue with the booking
+    - let's continue with the booking
+    - I want to continue with the booking
+    - proceed with the booking
+    - yes go ahead with the booking
+    - yes please book the table
+    - please book the table
+    - book the table
+    - yes I want to book it
+    - yes I'd like to book it
+    - I'd like to make the booking
+    - make the reservation
+    - yes make the reservation
+    - confirm
+    - yes confirm
+    - I confirm
+    - confirm the booking
+    - yes I confirm
+    - yeah sure
+    - yeah go ahead
+    - yeah that's right
+    - yeah let's do it
+    - yes yes
+    - um yes
+    - uh yeah
 
 - intent: deny
   examples: |
@@ -119,90 +177,143 @@ nlu:
 
 - intent: provide_district
   examples: |
-    - [Mitteh](district)
-    - [Mitta](district)
     - [Mitte](district)
+    - [Mitteh]{"entity": "district", "value": "Mitte"}
+    - [Mitta]{"entity": "district", "value": "Mitte"}
+    - [Mitter]{"entity": "district", "value": "Mitte"}
+    - [Mita]{"entity": "district", "value": "Mitte"}
+    - [Mitti]{"entity": "district", "value": "Mitte"}
     - [Friedrichshain](district)
-    - [Friedrichschain](district)
-    - [Friedrichs hain](district)
-    - [Freedrichshain](district)
-    - [Friedrichshayn](district)
-    - [Charlottenberg](district)
-    - [Charlottenbourg](district)
-    - [Charlottenbug](district)
+    - [Friedrichschain]{"entity": "district", "value": "Friedrichshain"}
+    - [Friedrichs hain]{"entity": "district", "value": "Friedrichshain"}
+    - [Freedrichshain]{"entity": "district", "value": "Friedrichshain"}
+    - [Friedrichshayn]{"entity": "district", "value": "Friedrichshain"}
+    - [Friedrich's Hain]{"entity": "district", "value": "Friedrichshain"}
+    - [Fredrichshain]{"entity": "district", "value": "Friedrichshain"}
+    - [Friedrichshine]{"entity": "district", "value": "Friedrichshain"}
     - [Charlottenburg](district)
+    - [Charlottenberg]{"entity": "district", "value": "Charlottenburg"}
+    - [Charlottenbourg]{"entity": "district", "value": "Charlottenburg"}
+    - [Charlottenbug]{"entity": "district", "value": "Charlottenburg"}
+    - [Charlotten Burg]{"entity": "district", "value": "Charlottenburg"}
+    - [Charlottenburgh]{"entity": "district", "value": "Charlottenburg"}
     - [Wilmersdorf](district)
-    - [Wilmersdorff](district)
-    - [Wilmers dorf](district)
-    - [Wilmersdorg](district)
-    - [Neuköln](district)
+    - [Wilmersdorff]{"entity": "district", "value": "Wilmersdorf"}
+    - [Wilmers dorf]{"entity": "district", "value": "Wilmersdorf"}
+    - [Wilmersdorg]{"entity": "district", "value": "Wilmersdorf"}
     - [Neukölln](district)
-    - [Neukoelln](district)
-    - [Neu köln](district)
-    - [Neu coln](district)
-    - [Noykeln](district)
+    - [Neuköln]{"entity": "district", "value": "Neukölln"}
+    - [Neukoelln]{"entity": "district", "value": "Neukölln"}
+    - [Neu köln]{"entity": "district", "value": "Neukölln"}
+    - [Neu coln]{"entity": "district", "value": "Neukölln"}
+    - [Noykeln]{"entity": "district", "value": "Neukölln"}
+    - [Neukolln]{"entity": "district", "value": "Neukölln"}
+    - [Neukoln]{"entity": "district", "value": "Neukölln"}
+    - [Noykolln]{"entity": "district", "value": "Neukölln"}
+    - [Noy Kölln]{"entity": "district", "value": "Neukölln"}
     - [Steglitz](district)
-    - [Steaglitz](district)
-    - [Steeglitz](district)
-    - [Steglits](district)
+    - [Steaglitz]{"entity": "district", "value": "Steglitz"}
+    - [Steeglitz]{"entity": "district", "value": "Steglitz"}
+    - [Steglits]{"entity": "district", "value": "Steglitz"}
+    - [Stegliz]{"entity": "district", "value": "Steglitz"}
     - [Spandau](district)
-    - [Spandow](district)
-    - [Spando](district)
-    - [Spanndau](district)
+    - [Spandow]{"entity": "district", "value": "Spandau"}
+    - [Spando]{"entity": "district", "value": "Spandau"}
+    - [Spanndau]{"entity": "district", "value": "Spandau"}
+    - [Span Dow]{"entity": "district", "value": "Spandau"}
     - [Prenzlauer Berg](district)
-    - [Prenzlower Berg](district)
-    - [Prenzlaur Berg](district)
-    - [Prentslauer Berg](district)
-    - [Prenslauer Berg](district)
-    - [Prenzlauer berg](district)
+    - [Prenzlower Berg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - [Prenzlaur Berg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - [Prentslauer Berg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - [Prenslauer Berg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - [Prenzlauer Burg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - [Prenzlberg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - [Prenzl Berg]{"entity": "district", "value": "Prenzlauer Berg"}
     - [Tempelhof](district)
-    - [Tempelhoff](district)
-    - [Tempelhove](district)
-    - [Templ hof](district)
+    - [Tempelhoff]{"entity": "district", "value": "Tempelhof"}
+    - [Tempelhove]{"entity": "district", "value": "Tempelhof"}
+    - [Templ hof]{"entity": "district", "value": "Tempelhof"}
+    - [Temple Hof]{"entity": "district", "value": "Tempelhof"}
+    - [Templehof]{"entity": "district", "value": "Tempelhof"}
     - [Lichtenberg](district)
-    - [Lichtenbourg](district)
-    - [Lichtenbug](district)
-    - [Lichtenberk](district)
+    - [Lichtenbourg]{"entity": "district", "value": "Lichtenberg"}
+    - [Lichtenbug]{"entity": "district", "value": "Lichtenberg"}
+    - [Lichtenberk]{"entity": "district", "value": "Lichtenberg"}
+    - [Lichten Berg]{"entity": "district", "value": "Lichtenberg"}
+    - [Lichtenburg]{"entity": "district", "value": "Lichtenberg"}
     - [Marzahn](district)
-    - [Marzan](district)
-    - [Marzaan](district)
-    - [Mar zahn](district)
+    - [Marzan]{"entity": "district", "value": "Marzahn"}
+    - [Marzaan]{"entity": "district", "value": "Marzahn"}
+    - [Mar zahn]{"entity": "district", "value": "Marzahn"}
+    - [Martzahn]{"entity": "district", "value": "Marzahn"}
     - [Treptow](district)
-    - [Treptau](district)
-    - [Treptov](district)
-    - [Trep tow](district)
+    - [Treptau]{"entity": "district", "value": "Treptow"}
+    - [Treptov]{"entity": "district", "value": "Treptow"}
+    - [Trep tow]{"entity": "district", "value": "Treptow"}
+    - [Treptoe]{"entity": "district", "value": "Treptow"}
     - [Reinickendorf](district)
-    - [Reinickendorff](district)
-    - [Reinickendorg](district)
-    - [Rein ickendorf](district)
-    - [Rhinickendorf](district)
+    - [Reinickendorff]{"entity": "district", "value": "Reinickendorf"}
+    - [Reinickendorg]{"entity": "district", "value": "Reinickendorf"}
+    - [Rein ickendorf]{"entity": "district", "value": "Reinickendorf"}
+    - [Rhinickendorf]{"entity": "district", "value": "Reinickendorf"}
+    - [Reinikendorf]{"entity": "district", "value": "Reinickendorf"}
     - [Schöneberg](district)
-    - [Schoeneberg](district)
-    - [Shoneberg](district)
-    - [Schoneberg](district)
-    - [Shoeneberg](district)
+    - [Schoeneberg]{"entity": "district", "value": "Schöneberg"}
+    - [Shoneberg]{"entity": "district", "value": "Schöneberg"}
+    - [Schoneberg]{"entity": "district", "value": "Schöneberg"}
+    - [Shoeneberg]{"entity": "district", "value": "Schöneberg"}
+    - [Schöneburg]{"entity": "district", "value": "Schöneberg"}
+    - [Shonaberg]{"entity": "district", "value": "Schöneberg"}
     - [Kreuzberg](district)
-    - [Kroytzberg](district)
-    - [Kroitzberg](district)
-    - [Kreutzberg](district)
-    - [Kreuzburg](district)
+    - [Kroytzberg]{"entity": "district", "value": "Kreuzberg"}
+    - [Kroitzberg]{"entity": "district", "value": "Kreuzberg"}
+    - [Kreutzberg]{"entity": "district", "value": "Kreuzberg"}
+    - [Kreuzburg]{"entity": "district", "value": "Kreuzberg"}
+    - [Croyzberg]{"entity": "district", "value": "Kreuzberg"}
+    - [Kreuz Berg]{"entity": "district", "value": "Kreuzberg"}
     - [Pankow](district)
-    - [Pankov](district)
-    - [Pankoff](district)
-    - [Pan kow](district)
+    - [Pankov]{"entity": "district", "value": "Pankow"}
+    - [Pankoff]{"entity": "district", "value": "Pankow"}
+    - [Pan kow]{"entity": "district", "value": "Pankow"}
+    - [Pankau]{"entity": "district", "value": "Pankow"}
     - [Hoppegarten](district)
-    - [Hoppegarden](district)
-    - [Hoppe garten](district)
-    - [Hoppa garten](district)
+    - [Hoppegarden]{"entity": "district", "value": "Hoppegarten"}
+    - [Hoppe garten]{"entity": "district", "value": "Hoppegarten"}
+    - [Hoppa garten]{"entity": "district", "value": "Hoppegarten"}
     - I'm looking in [Mitte](district)
     - somewhere in [Kreuzberg](district)
     - in [Prenzlauer Berg](district)
-    - I'm looking in [Schoeneberg](district)
-    - somewhere in [Prenzlower Berg](district)
-    - in [Neukoelln](district)
-    - in [Charlottenberg](district)
-    - I want to eat in [Kreuzburg](district)
-    - looking in [Spandow](district)
+    - I'm looking in [Schoeneberg]{"entity": "district", "value": "Schöneberg"}
+    - somewhere in [Prenzlower Berg]{"entity": "district", "value": "Prenzlauer Berg"}
+    - in [Neukoelln]{"entity": "district", "value": "Neukölln"}
+    - in [Charlottenberg]{"entity": "district", "value": "Charlottenburg"}
+    - I want to eat in [Kreuzburg]{"entity": "district", "value": "Kreuzberg"}
+    - looking in [Spandow]{"entity": "district", "value": "Spandau"}
+    - [Friedrichshain](district) please
+    - in [Neukölln](district) please
+    - I'd like to eat in [Charlottenburg](district)
+    - somewhere around [Schöneberg](district)
+    - near [Tempelhof](district)
+    - close to [Pankow](district)
+    - what about [Lichtenberg](district)
+    - let's go with [Wilmersdorf](district)
+    - [Steglitz](district) would be great
+    - [Treptow](district) would be nice
+    - I live in [Reinickendorf](district)
+    - I'm in [Marzahn](district)
+    - a restaurant in [Spandau](district)
+    - I'd like a place in [Kreuzberg](district)
+    - maybe [Mitte](district)
+    - how about [Friedrichs hain]{"entity": "district", "value": "Friedrichshain"}
+    - the district is [Neukolln]{"entity": "district", "value": "Neukölln"}
+    - in the [Prenzlberg]{"entity": "district", "value": "Prenzlauer Berg"} area
+    - [Hoppegarten](district) is fine
+    - let's say [Kreutzberg]{"entity": "district", "value": "Kreuzberg"}
+    - I prefer [Schoneberg]{"entity": "district", "value": "Schöneberg"}
+    - I want to eat somewhere in [Friedrichshain](district)
+    - can you find something in [Mitte](district)
+    - I'm looking for a restaurant in [Charlottenburg](district)
+    - in [Pankow](district) if possible
 
 - intent: provide_cuisine
   examples: |
