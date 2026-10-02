@@ -59,6 +59,21 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": str(exc), "traceback": traceback.format_exc()}
     )
+
+#######
+# SASSI Fragebogen einbinden 
+#######
+
+from sassi_router import router as sassi_router
+app.include_router(sassi_router)
+
+#######
+# Demographische Daten Fragebogen
+#######
+
+from demographics_router import router as demographics_router
+app.include_router(demographics_router)
+
 #######
 # 
 #######
