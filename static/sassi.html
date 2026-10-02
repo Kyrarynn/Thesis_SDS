@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questionnaire</title>
+<style>
+  :root { --fg:#1d1d1f; --muted:#6e6e73; --line:#d9d9de; --accent:#2f5bd3; --bg:#fff; --row:#f6f6f8; --err:#c62828; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--fg); background:var(--bg); }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.5rem; margin: 0 0 8px; }
+  p.intro { color: var(--muted); line-height: 1.5; margin: 0 0 24px; }
+  table { width:100%; border-collapse: collapse; }
+  thead th { position: sticky; top: 0; background: var(--bg); font-size: .78rem; font-weight: 600;
+             color: var(--muted); padding: 8px 4px; border-bottom: 2px solid var(--line); text-align:center; }
+  thead th:first-child { text-align:left; }
+  tbody tr:nth-child(odd) { background: var(--row); }
+  tbody tr.missing { outline: 2px solid var(--err); outline-offset: -2px; }
+  td { padding: 10px 4px; text-align: center; border-bottom: 1px solid var(--line); }
+  td.stmt { text-align: left; padding-left: 10px; width: 40%; line-height: 1.35; }
+  input[type=radio] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--accent); }
+  .actions { margin-top: 28px; display:flex; align-items:center; gap:16px; flex-wrap: wrap; }
+  button { background: var(--accent); color:#fff; border:0; border-radius:8px; padding: 12px 28px;
+           font-size: 1rem; cursor:pointer; }
+  button:disabled { opacity:.5; cursor: default; }
+  #msg { color: var(--err); }
+  .done { text-align:center; padding: 80px 16px; }
+  /* Narrow screens: stack scale under each statement */
+  @media (max-width: 720px) {
+    thead { display:none; }
+    tr { display:block; padding: 12px 8px; }
+    td { display:inline-block; border:0; padding: 4px 2px; }
+    td.stmt { display:block; width:100%; padding: 0 0 8px; font-weight: 500; }
+    td.opt { width: calc(100% / 7 - 2px); font-size: .65rem; color: var(--muted); }
+    td.opt::after { content: attr(data-label); display:block; margin-top:4px; }
+  }
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>Your experience with the system</h1>
+  <p class="intro">
+    Please indicate how much you agree or disagree with each statement about the
+    conversation you just had. There are no right or wrong answers &ndash; please answer
+    spontaneously based on your own impression.
+  </p>
+  <form id="form">
+    <table>
+      <thead id="head"></thead>
+      <tbody id="body"></tbody>
+    </table>
+    <div class="actions">
+      <button type="submit" id="submit">Submit</button>
+      <span id="msg"></span>
+    </div>
+  </form>
+</main>
+
+<script>
+// Opened by the flow controller: sassi.html?pid=P07&cond=A&step=2
+// Set API_BASE if the page is not served by the same FastAPI app.
+const API_BASE = "";
+const params = new URLSearchParams(location.search);
+const pid = params.get("pid");
+const cond = params.get("cond");
+const sessionId = params.get("session");
+
+function shuffle(arr) {               // Fisher-Yates
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function init() {
+  if (!pid || !["A", "B"].includes(cond)) {
+    document.getElementById("app").innerHTML =
+      '<p class="done">Missing or invalid URL parameters (pid, cond=A|B).</p>';
+    return;
+  }
+  const res = await fetch(`${API_BASE}/sassi/items`);
+  const { items, scale_labels } = await res.json();
+  const order = shuffle(items);
+  window._order = order.map(i => i.id);
+
+  document.getElementById("head").innerHTML =
+    "<tr><th></th>" + scale_labels.map(l => `<th>${l}</th>`).join("") + "</tr>";
+
+  document.getElementById("body").innerHTML = order.map(item => `
+    <tr id="row-${item.id}">
+      <td class="stmt">${item.text}</td>
+      ${scale_labels.map((l, k) => `
+        <td class="opt" data-label="${k === 0 || k === 3 || k === 6 ? l : ""}">
+          <input type="radio" name="${item.id}" value="${k + 1}" aria-label="${item.text}: ${l}">
+        </td>`).join("")}
+    </tr>`).join("");
+
+  document.getElementById("body").addEventListener("change", e => {
+    e.target.closest("tr").classList.remove("missing");
+  });
+}
+
+document.getElementById("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = document.getElementById("msg");
+  const responses = {};
+  let firstMissing = null;
+  for (const id of window._order) {
+    const checked = document.querySelector(`input[name="${id}"]:checked`);
+    const row = document.getElementById(`row-${id}`);
+    if (checked) { responses[id] = Number(checked.value); row.classList.remove("missing"); }
+    else { row.classList.add("missing"); firstMissing ??= row; }
+  }
+  if (firstMissing) {
+    msg.textContent = "Please answer all statements.";
+    firstMissing.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  const btn = document.getElementById("submit");
+  btn.disabled = true; msg.textContent = "";
+  try {
+    const r = await fetch(`${API_BASE}/sassi/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participant_id: pid, condition: cond, session_id: sessionId,
+        item_order: window._order, responses
+      })
+    });
+    // 409 = already saved (e.g. page reloaded after submitting) -> just move on
+    if (!r.ok && r.status !== 409) throw new Error((await r.json()).detail ?? r.statusText);
+    await goNext();
+  } catch (err) {
+    btn.disabled = false;
+    msg.textContent = "Could not save: " + err.message;
+  }
+});
+
+// Ask the flow controller for the next page
+async function goNext() {
+  const step = Number(params.get("step"));
+  const r = await fetch(`${API_BASE}/flow/advance`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pid, from_step: step })
+  });
+  if (!r.ok) throw new Error("Could not load next step");
+  location.href = (await r.json()).url;
+}
+
+init();
+</script>
+</body>
+</html>

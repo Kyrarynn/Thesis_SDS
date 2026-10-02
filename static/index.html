@@ -181,13 +181,13 @@
   <label for="participant-number">Participant number</label>
   <input type="number" id="participant-number" min="1" placeholder="e.g. 1">
 
-  <label for="system-version">System version</label>
-  <select id="system-version">
-    <option value="A">A: early error</option>
-    <option value="B">B: late error</option>
+  <label for="system-order">System order</label>
+  <select id="system-order">
+    <option value="AB">A → B (early error first)</option>
+    <option value="BA">B → A (late error first)</option>
   </select>
 
-  <button id="start-btn" onclick="startSession()">Start session</button>
+  <button id="start-btn" onclick="startStudy()">Start study</button>
   <p id="setup-error" style="color:red;font-size:0.85rem;margin-top:8px;"></p>
 </div>
 
@@ -205,42 +205,77 @@
 
 <script>
 // ── State ──
-let participantId  = null;
+let participantId  = null;   // unique id of this conversation (Rasa sender)
 let turnIndex      = 0;
 let pendingRating  = false;
 let mediaRecorder  = null;
 let audioChunks    = [];
 let synth          = window.speechSynthesis;
 
-// ── Session start ──
-async function startSession() {
-  const num = parseInt(document.getElementById('participant-number').value);
-  const ver = document.getElementById('system-version').value;
+// Set by the flow controller via URL: /?pid=P07&cond=A&step=1
+const urlParams  = new URLSearchParams(location.search);
+const flowPid    = urlParams.get('pid');
+const flowCond   = urlParams.get('cond');
+const flowStep   = Number(urlParams.get('step'));
+
+// ── Start screen: create participant and go to the first step ──
+async function startStudy() {
+  const num   = parseInt(document.getElementById('participant-number').value);
+  const order = document.getElementById('system-order').value;
+  const err   = document.getElementById('setup-error');
 
   if (!num || num < 1) {
-    document.getElementById('setup-error').textContent = 'Please enter a valid participant number.';
+    err.textContent = 'Please enter a valid participant number.';
     return;
   }
 
+  let res = await fetch('/flow/start', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({participant_number: num, order: order}),
+  });
+
+  if (res.status === 409) {
+    // Participant already exists -> offer to resume where they left off
+    const pid = 'P' + String(num).padStart(2, '0');
+    if (!confirm(`${pid} already exists. Resume at their current step?`)) return;
+    res = await fetch(`/flow/current?pid=${pid}`);
+  }
+
+  if (!res.ok) {
+    err.textContent = 'Could not connect to server.';
+    return;
+  }
+  location.href = (await res.json()).url;
+}
+
+// ── Conversation page: start a Rasa session for this participant + system ──
+async function startSession() {
   const res = await fetch('/session/start', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({participant_number: num, system_version: ver}),
+    body: JSON.stringify({
+      participant_number: parseInt(flowPid.slice(1)),
+      system_version:     flowCond,
+      participant_code:   flowPid,
+    }),
   });
 
   if (!res.ok) {
-    document.getElementById('setup-error').textContent =
-      'Could not connect to server. Is Rasa running?';
+    document.getElementById('chat-log').innerHTML =
+      '<p style="color:red">Could not connect to server. Is Rasa running?</p>';
     return;
   }
 
   const data = await res.json();
   participantId = data.participant_id;
+  setStatus('Session started. Hold the microphone button to speak.');
+}
 
+if (flowPid && ['A', 'B'].includes(flowCond)) {
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('chat-panel').style.display  = 'flex';
-
-  setStatus('Session started. Hold the microphone button to speak.');
+  startSession();
 }
 
 // ── Audio recording ──
@@ -306,7 +341,9 @@ async function processAudio() {
   const formData = new FormData();
   formData.append('audio', blob, 'recording.webm');
   formData.append('participant_id', participantId);   // for audio saving
-  formData.append('turn_index', turnIndex);           // for audio saving 
+  formData.append('turn_index', turnIndex);           // for audio saving
+  formData.append('participant_code', flowPid);       // file name: P07_A_..._turnN.webm
+  formData.append('condition', flowCond);
 
   let transcript = '';
   try {
@@ -416,17 +453,18 @@ async function submitRating(turnIdx, rating, btn) {
   setStatus('Rating submitted. Hold the button to speak again.');
 }
 
-// ── End session ──
+// ── End session -> next step (SASSI for this system) ──
 async function endSession() {
-  if (!confirm('End the session?')) return;
+  if (!confirm('End the conversation?')) return;
 
   await fetch(`/session/end?participant_id=${participantId}`, {method: 'POST'});
 
-  document.getElementById('chat-panel').innerHTML =
-    '<p style="text-align:center;color:#555;margin-top:80px;font-size:1.1rem;">' +
-    'Session complete. Thank you!<br><br>' +
-    '<span style="font-size:0.9rem;color:#888;">Please hand the device back to the researcher.</span>' +
-    '</p>';
+  const res = await fetch('/flow/advance', {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify({pid: flowPid, from_step: flowStep}),
+  });
+  location.href = (await res.json()).url;
 }
 
 // ── Helpers ──
