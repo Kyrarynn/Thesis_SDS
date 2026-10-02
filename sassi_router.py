@@ -24,7 +24,7 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from pymongo import MongoClient
 
 from sassi_items import ITEM_IDS, ITEMS, SCALE_LABELS, SUBSCALES, score
@@ -45,9 +45,8 @@ class SassiSubmission(BaseModel):
     item_order: list[str]                  # order in which items were shown
     responses: dict[str, int]              # item_id -> 1..7
 
-    @field_validator("responses")
-    @classmethod
-    def check_responses(cls, v: dict[str, int]) -> dict[str, int]:
+    @validator("responses")
+    def check_responses(cls, v):
         missing = set(ITEM_IDS) - set(v)
         extra = set(v) - set(ITEM_IDS)
         if missing:
@@ -58,10 +57,9 @@ class SassiSubmission(BaseModel):
         if bad:
             raise ValueError(f"Values must be 1-7: {bad}")
         return v
-
-    @field_validator("item_order")
-    @classmethod
-    def check_order(cls, v: list[str]) -> list[str]:
+ 
+    @validator("item_order")
+    def check_order(cls, v):
         if sorted(v) != sorted(ITEM_IDS):
             raise ValueError("item_order must contain every item exactly once")
         return v

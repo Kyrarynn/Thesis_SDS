@@ -21,7 +21,7 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, root_validator
 from pymongo import MongoClient
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
@@ -60,12 +60,12 @@ class Demographics(BaseModel):
     voice_assistant_usage: Usage
     background: Field_
 
-    @model_validator(mode="after")
-    def clean_self_describe(self):
-        if self.gender != "self_describe":
-            self.gender_self_describe = None
-        self.native_language = self.native_language.strip()
-        return self
+    @root_validator(skip_on_failure=True)
+    def clean_self_describe(cls, values):
+        if values.get("gender") != "self_describe":
+            values["gender_self_describe"] = None
+        values["native_language"] = values["native_language"].strip()
+        return values
 
 
 @router.post("/submit")
