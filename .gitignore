@@ -2,3 +2,5 @@
 .venv
 .venv_api
 models
+audio_recordings/
+*.csv

@@ -1,0 +1,20 @@
+# Environment: .venv_api  (Python 3.10.11)
+# FastAPI orchestration, Whisper ASR, MongoDB logging, questionnaires
+# Install:  .venv_api\Scripts\activate   then   pip install -r requirements-api.txt
+# Versions = exactly what runs on the development laptop (Oct 2026)
+
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+httpx==0.27.2
+motor==3.5.1            # async MongoDB driver (main.py)
+pymongo==4.8.0          # sync MongoDB driver (SASSI / demographics / flow routers)
+pydantic==2.8.2
+python-multipart==0.0.9 # file upload in /transcribe
+openai-whisper==20250625
+torch==2.14.0           # pulled in by Whisper (CPU build)
+numpy==2.2.6
+
+# Audio quality check (check_audio.py) and later feature extraction
+opensmile==2.6.0
+soundfile==0.14.0
+pandas==2.3.3
