@@ -94,76 +94,6 @@ class ActionResetAfterBooking(Action):
     def run(self, dispatcher, tracker, domain):
         return [SlotSet("awaiting_booking_confirmation", False)]
 
-# ============================================================
-# DISTRICT MATCHING
-# ============================================================
-# Whisper often splits German district names into English words
-# ("Charlottenburg" -> "Charlotte, Hamburg", "Spandau" -> "Span Dow").
-# The NLU entity then only covers a fragment ("Hamburg"). We therefore match
-# against the FULL user utterance and only accept real Berlin districts.
-
-import unicodedata
-from difflib import SequenceMatcher
-
-DISTRICT_ALIASES = {
-    "Mitte": ["mitteh", "mitta", "mitter", "mita", "mitti"],
-    "Friedrichshain": ["friedrichschain", "friedrichshein", "freedrichshain", "friedrichshayn", "fredrichshain", "friedrichshine"],
-    "Kreuzberg": ["kroytzberg", "kroitzberg", "kreutzberg", "kreuzburg", "croyzberg"],
-    "Prenzlauer Berg": ["prenzlowerberg", "prenzlaurberg", "prentslauerberg", "prenslauerberg", "prenzlauerburg", "prenzlberg"],
-    "Pankow": ["pankov", "pankoff", "pankau"],
-    "Charlottenburg": ["charlottenberg", "charlottenbourg", "charlottenbug", "charlottenburgh", "charlottesburg",
-                       "charlottehamburg", "charlotteburg", "charlotteandburg", "charlotteinburg"],
-    "Wilmersdorf": ["wilmersdorff", "wilmersdorg"],
-    "Spandau": ["spandow", "spando", "spanndau", "spandao", "spandaw", "spundau", "spundow", "spandou"],
-    "Steglitz": ["steaglitz", "steeglitz", "steglits", "stegliz"],
-    "Tempelhof": ["tempelhoff", "tempelhove", "templhof", "templehof"],
-    "Schöneberg": ["schoneberg", "shoneberg", "shoeneberg", "schoeneburg", "schoneburg", "shonaberg"],
-    "Neukölln": ["neukoln", "neukolln", "neucoln", "noykeln", "noykolln"],
-    "Treptow": ["treptau", "treptov", "treptoe"],
-    "Köpenick": ["kopenick", "koepenik", "kopenik"],
-    "Marzahn": ["marzan", "marzaan", "martzahn"],
-    "Hellersdorf": ["hellersdorff"],
-    "Lichtenberg": ["lichtenbourg", "lichtenbug", "lichtenberk", "lichtenburg"],
-    "Reinickendorf": ["reinickendorff", "reinickendorg", "rhinickendorf", "reinikendorf"],
-    "Hoppegarten": ["hoppegarden", "hoppagarten"],
-}
-
-
-def _norm_text(s: Text) -> Text:
-    """lowercase, umlauts -> ae/oe/ue, drop everything that is not a letter"""
-    s = s.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
-    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z]", "", s)
-
-
-_DISTRICT_KEYS = (
-    sorted(((_norm_text(d), d) for d in DISTRICT_ALIASES), key=lambda x: -len(x[0]))
-    + sorted(((a, d) for d, al in DISTRICT_ALIASES.items() for a in al), key=lambda x: -len(x[0]))
-)
-
-
-def match_district(*texts: Text):
-    """Return the canonical Berlin district found in any of the texts, else None."""
-    norm = [_norm_text(t) for t in texts if t]
-    # 1) exact name or known variant anywhere in the utterance (longest keys first)
-    for t in norm:
-        for key, district in _DISTRICT_KEYS:
-            if key in t:
-                return district
-    # 2) fuzzy fallback; stricter for short names (avoids "Spandow" -> "Pankow")
-    best, best_score = None, 0.0
-    for t in norm:
-        for key, district in _DISTRICT_KEYS:
-            n = len(key)
-            need = 0.9 if n <= 7 else 0.82
-            if len(t) < n - 2:
-                continue
-            for w in range(max(1, n - 2), n + 3):
-                for i in range(0, max(1, len(t) - w + 1)):
-                    score = SequenceMatcher(None, key, t[i:i + w]).ratio()
-                    if score >= need and score > best_score:
-                        best, best_score = district, score
-    return best
 
 # ============================================================
 # FORM VALIDATORS
@@ -183,17 +113,17 @@ class ValidateRecommendationForm(FormValidationAction):
         return "validate_recommendation_form"
 
     def validate_district(self, slot_value, dispatcher, tracker, domain):
-        # Check the full utterance first: the entity may only hold a fragment
-        # ("Charlotte, Hamburg" -> entity "Hamburg").
-        user_text = tracker.latest_message.get("text", "")
-        district = match_district(user_text, slot_value or "")
-        if district:
-            if district != slot_value:
-                logger.info(f"District normalised: entity={slot_value!r} text={user_text!r} -> {district}")
-            return {"district": district}
-        logger.info(f"District rejected: entity={slot_value!r} text={user_text!r}")
+    # slot_value is now always the raw text (from_text mapping)
+        if slot_value:
+            cleaned = slot_value.strip()
+            for prefix in ["i'm looking in ", "in ", "at ", "near ", "around "]:
+                if cleaned.lower().startswith(prefix):
+                    cleaned = cleaned[len(prefix):]
+                    break
+            if len(cleaned) > 1:
+                return {"district": cleaned.strip()}
         dispatcher.utter_message(
-            text="I didn't catch the district. Which district of Berlin are you looking in?"
+            text="I didn't catch the district. Which area are you looking in?"
         )
         return {"district": None}
 
@@ -298,7 +228,7 @@ class ValidateBookingForm(FormValidationAction):
                     return {"date": raw_text}
         dispatcher.utter_message(text="I didn't catch the date. Could you repeat it?")
         return {"date": None}
-
+ 
     def validate_time(self, slot_value, dispatcher, tracker, domain):
         if slot_value:
             return {"time": slot_value}
