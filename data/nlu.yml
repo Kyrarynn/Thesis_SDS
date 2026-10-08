@@ -543,6 +543,91 @@ nlu:
     - lets do [8](time)
     - how about [8](time)
     - Is there something free for [8](time)?
+    - [5 pm](time)
+    - [5 p.m.](time)
+    - [5 PM](time)
+    - [5pm](time)
+    - at [5 pm](time)
+    - at [5 p.m.](time)
+    - [5 pm](time) please
+    - [5 p.m.](time) please
+    - [five pm](time)
+    - [five p.m.](time)
+    - at [five p.m.](time)
+    - [5 p.m.](time) would be great
+    - let's say [5 p.m.](time)
+    - [5 in the evening](time)
+    - at [5 in the evening](time)
+    - [6 pm](time)
+    - [6 p.m.](time)
+    - [6 PM](time)
+    - [6pm](time)
+    - at [6 pm](time)
+    - at [6 p.m.](time)
+    - [6 pm](time) please
+    - [6 p.m.](time) please
+    - [six pm](time)
+    - [six p.m.](time)
+    - at [six p.m.](time)
+    - [6 p.m.](time) would be great
+    - let's say [6 p.m.](time)
+    - [6 in the evening](time)
+    - at [6 in the evening](time)
+    - [7 pm](time)
+    - [7 p.m.](time)
+    - [7 PM](time)
+    - at [7 pm](time)
+    - at [7 p.m.](time)
+    - [7 pm](time) please
+    - [7 p.m.](time) please
+    - [seven pm](time)
+    - [seven p.m.](time)
+    - at [seven p.m.](time)
+    - [7 p.m.](time) would be great
+    - let's say [7 p.m.](time)
+    - [7 in the evening](time)
+    - at [7 in the evening](time)
+    - [8 pm](time)
+    - [8 p.m.](time)
+    - [8 PM](time)
+    - [8pm](time)
+    - at [8 pm](time)
+    - at [8 p.m.](time)
+    - [8 pm](time) please
+    - [8 p.m.](time) please
+    - [eight pm](time)
+    - [eight p.m.](time)
+    - at [eight p.m.](time)
+    - [8 p.m.](time) would be great
+    - let's say [8 p.m.](time)
+    - [8 in the evening](time)
+    - at [8 in the evening](time)
+    - [9 pm](time)
+    - [9 p.m.](time)
+    - [9 PM](time)
+    - [9pm](time)
+    - at [9 pm](time)
+    - at [9 p.m.](time)
+    - [9 pm](time) please
+    - [9 p.m.](time) please
+    - [nine pm](time)
+    - [nine p.m.](time)
+    - at [nine p.m.](time)
+    - [9 p.m.](time) would be great
+    - let's say [9 p.m.](time)
+    - [9 in the evening](time)
+    - at [9 in the evening](time)
+    - [6:30 p.m.](time)
+    - [7:30 p.m.](time)
+    - at [7:30 p.m.](time)
+    - [half past six](time)
+    - [half past seven](time)
+    - [18:00](time)
+    - at [19:30](time)
+    - I said [6 p.m.](time)
+    - no, [6 p.m.](time)
+    - no, at [7 p.m.](time)
+
   
 - intent: provide_date
   examples: |

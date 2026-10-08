@@ -94,6 +94,157 @@ class ActionResetAfterBooking(Action):
     def run(self, dispatcher, tracker, domain):
         return [SlotSet("awaiting_booking_confirmation", False)]
 
+# ============================================================
+# DISTRICT MATCHING
+# ============================================================
+# Whisper often splits German district names into English words
+# ("Charlottenburg" -> "Charlotte, Hamburg", "Spandau" -> "Span Dow").
+# The NLU entity then only covers a fragment ("Hamburg"). We therefore match
+# against the FULL user utterance and only accept real Berlin districts.
+
+import unicodedata
+from difflib import SequenceMatcher
+
+DISTRICT_ALIASES = {
+    "Mitte": ["mitteh", "mitta", "mitter", "mita", "mitti"],
+    "Friedrichshain": ["friedrichschain", "friedrichshein", "freedrichshain", "friedrichshayn", "fredrichshain", "friedrichshine"],
+    "Kreuzberg": ["kroytzberg", "kroitzberg", "kreutzberg", "kreuzburg", "croyzberg"],
+    "Prenzlauer Berg": ["prenzlowerberg", "prenzlaurberg", "prentslauerberg", "prenslauerberg", "prenzlauerburg", "prenzlberg"],
+    "Pankow": ["pankov", "pankoff", "pankau"],
+    "Charlottenburg": ["charlottenberg", "charlottenbourg", "charlottenbug", "charlottenburgh", "charlottesburg",
+                       "charlottehamburg", "charlotteburg", "charlotteandburg", "charlotteinburg"],
+    "Wilmersdorf": ["wilmersdorff", "wilmersdorg"],
+    "Spandau": ["spandow", "spando", "spanndau", "spandao", "spandaw", "spundau", "spundow", "spandou"],
+    "Steglitz": ["steaglitz", "steeglitz", "steglits", "stegliz"],
+    "Tempelhof": ["tempelhoff", "tempelhove", "templhof", "templehof"],
+    "Schöneberg": ["schoneberg", "shoneberg", "shoeneberg", "schoeneburg", "schoneburg", "shonaberg"],
+    "Neukölln": ["neukoln", "neukolln", "neucoln", "noykeln", "noykolln"],
+    "Treptow": ["treptau", "treptov", "treptoe"],
+    "Köpenick": ["kopenick", "koepenik", "kopenik"],
+    "Marzahn": ["marzan", "marzaan", "martzahn"],
+    "Hellersdorf": ["hellersdorff"],
+    "Lichtenberg": ["lichtenbourg", "lichtenbug", "lichtenberk", "lichtenburg"],
+    "Reinickendorf": ["reinickendorff", "reinickendorg", "rhinickendorf", "reinikendorf"],
+    "Hoppegarten": ["hoppegarden", "hoppagarten"],
+}
+
+
+def _norm_text(s: Text) -> Text:
+    """lowercase, umlauts -> ae/oe/ue, drop everything that is not a letter"""
+    s = s.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z]", "", s)
+
+
+_DISTRICT_KEYS = (
+    sorted(((_norm_text(d), d) for d in DISTRICT_ALIASES), key=lambda x: -len(x[0]))
+    + sorted(((a, d) for d, al in DISTRICT_ALIASES.items() for a in al), key=lambda x: -len(x[0]))
+)
+
+
+def match_district(*texts: Text):
+    """Return the canonical Berlin district found in any of the texts, else None."""
+    norm = [_norm_text(t) for t in texts if t]
+    # 1) exact name or known variant anywhere in the utterance (longest keys first)
+    for t in norm:
+        for key, district in _DISTRICT_KEYS:
+            if key in t:
+                return district
+    # 2) fuzzy fallback; stricter for short names (avoids "Spandow" -> "Pankow")
+    best, best_score = None, 0.0
+    for t in norm:
+        for key, district in _DISTRICT_KEYS:
+            n = len(key)
+            need = 0.9 if n <= 7 else 0.82
+            if len(t) < n - 2:
+                continue
+            for w in range(max(1, n - 2), n + 3):
+                for i in range(0, max(1, len(t) - w + 1)):
+                    score = SequenceMatcher(None, key, t[i:i + w]).ratio()
+                    if score >= need and score > best_score:
+                        best, best_score = district, score
+    return best
+
+# ============================================================
+# TIME / PARTY SIZE PARSING
+# ============================================================
+# The time and num_people slots are filled from the raw text while the booking
+# form asks for them (see domain.yml). These helpers turn Whisper output such as
+# "6 p.m.", "Six PM.", "at 6", "half past seven" into a clean value.
+
+_NUM_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+    "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
+    "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19, "twenty": 20,
+}
+
+
+def _words_to_digits(t: Text) -> Text:
+    return re.sub(r"\b(" + "|".join(_NUM_WORDS) + r")\b",
+                  lambda m: str(_NUM_WORDS[m.group(1)]), t)
+
+
+def parse_time(text: Text):
+    """Return a time like '6 pm' / '7:30 pm', or None if the text contains no time."""
+    if not text:
+        return None
+    t = text.lower()
+    t = re.sub(r"\bp\.?\s?m\b\.?", " pm", t)      # p.m. / p. m. / pm
+    t = re.sub(r"\ba\.?\s?m\b\.?", " am", t)      # a.m.
+    t = t.replace("o'clock", " oclock").replace("o clock", " oclock")
+    t = _words_to_digits(t)
+
+    hour = minute = None
+    ampm = None
+    m = re.search(r"half past (\d{1,2})", t)
+    if m:
+        hour, minute = int(m.group(1)), 30
+    if hour is None:
+        m = re.search(r"quarter past (\d{1,2})", t)
+        if m:
+            hour, minute = int(m.group(1)), 15
+    if hour is None:
+        m = re.search(r"quarter to (\d{1,2})", t)
+        if m:
+            hour, minute = int(m.group(1)) - 1, 45
+    if hour is None:
+        # prefer a number that is followed by pm/am/oclock
+        m = re.search(r"(\d{1,2})(?:[:.](\d{2}))?\s*(pm|am|oclock)\b", t)
+        if not m:
+            m = re.search(r"\b(\d{1,2})(?:[:.](\d{2}))?\b", t)
+        if not m:
+            return None
+        hour = int(m.group(1))
+        minute = int(m.group(2)) if m.group(2) else 0
+    if re.search(r"\bam\b", t):
+        ampm = "am"
+    if re.search(r"\bpm\b", t):
+        ampm = "pm"
+
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        return None
+    if hour > 12:                       # 18:00 -> 6 pm
+        hour, ampm = hour - 12, "pm"
+    elif hour == 0:
+        hour, ampm = 12, "am"
+    elif ampm is None:                  # restaurant booking: "at 6" means 6 pm
+        ampm = "pm"
+    return f"{hour}:{minute:02d} {ampm}" if minute else f"{hour} {ampm}"
+
+
+def parse_party_size(text: Text):
+    """Return the number of people (1-20) in the text, or None."""
+    if not text:
+        return None
+    t = text.lower()
+    if re.search(r"\b(just me|only me|myself|alone)\b", t):
+        return 1
+    t = _words_to_digits(t)
+    m = re.search(r"\b(\d{1,2})\b", t)
+    if m and 1 <= int(m.group(1)) <= 20:
+        return int(m.group(1))
+    return None
 
 # ============================================================
 # FORM VALIDATORS
@@ -113,18 +264,17 @@ class ValidateRecommendationForm(FormValidationAction):
         return "validate_recommendation_form"
 
     def validate_district(self, slot_value, dispatcher, tracker, domain):
-    # slot_value is now always the raw text (from_text mapping)
-        if slot_value:
-            cleaned = slot_value.strip()
-            for prefix in ["i'm looking in ", "in ", "at ", "near ", "around "]:
-                if cleaned.lower().startswith(prefix):
-                    cleaned = cleaned[len(prefix):]
-                    break
-            if len(cleaned) > 1:
-                return {"district": cleaned.strip()}
-        dispatcher.utter_message(
-            text="I didn't catch the district. Which area are you looking in?"
-        )
+        # Check the full utterance first: the entity may only hold a fragment
+        # ("Charlotte, Hamburg" -> entity "Hamburg").
+        user_text = tracker.latest_message.get("text", "")
+        district = match_district(user_text, slot_value or "")
+        if district:
+            if district != slot_value:
+                logger.info(f"District normalised: entity={slot_value!r} text={user_text!r} -> {district}")
+            return {"district": district}
+        logger.info(f"District rejected: entity={slot_value!r} text={user_text!r}")
+        # Short message only: the form asks utter_ask_district again right after this.
+        dispatcher.utter_message(text="Sorry, I didn't catch the district.")
         return {"district": None}
 
     def validate_cuisine(self, slot_value, dispatcher, tracker, domain):
@@ -228,25 +378,16 @@ class ValidateBookingForm(FormValidationAction):
                     return {"date": raw_text}
         dispatcher.utter_message(text="I didn't catch the date. Could you repeat it?")
         return {"date": None}
- 
+
     def validate_time(self, slot_value, dispatcher, tracker, domain):
-        if slot_value:
-            return {"time": slot_value}
-        raw = get_last_user_text(tracker)
-        if raw:
-            # Basic sanity check — reject obvious nonsense
-            time_hints = [":", "am", "pm", "o'clock", "half", "quarter",
-                        "morning", "afternoon", "evening", "night",
-                        "one", "two", "three", "four", "five", "six",
-                        "seven", "eight", "nine", "ten", "eleven", "twelve"]
-            if any(hint in raw.lower() for hint in time_hints) or any(c.isdigit() for c in raw):
-                return {"time": raw}
-            dispatcher.utter_message(
-                text="I didn't quite understand that time. "
-                    "Could you say it again? For example: 7pm, half past six, 19:00."
-            )
-            return {"time": None}
-        dispatcher.utter_message(text="I didn't catch the time. Could you say it again?")
+        # slot_value is the raw user text (from_text mapping while the time is asked)
+        user_text = tracker.latest_message.get("text", "") or str(slot_value or "")
+        parsed = parse_time(user_text) or parse_time(str(slot_value or ""))
+        if parsed:
+            logger.info(f"Time parsed: text={user_text!r} -> {parsed}")
+            return {"time": parsed}
+        logger.info(f"Time rejected: text={user_text!r}")
+        dispatcher.utter_message(text="Sorry, I didn't catch the time.")
         return {"time": None}
 
     def validate_num_people(
@@ -256,41 +397,14 @@ class ValidateBookingForm(FormValidationAction):
     tracker: Tracker,
     domain: DomainDict,
     ) -> Dict[Text, Any]:
-
-        word_to_num = {
-            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
-            "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-            "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
-            "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
-            "nineteen": 19, "twenty": 20,
-        }
-
-        # Get the value to parse — entity extraction or raw text fallback
-        raw = slot_value
-        if not raw:
-            for event in reversed(tracker.events):
-                if event.get("event") == "user":
-                    raw = event.get("text", "").strip().lower()
-                    break
-
-        if not raw:
-            dispatcher.utter_message(text="I need a number for the party size. How many people?")
-            return {"num_people": None}
-
-        # Try word first, then digit
-        raw_lower = str(raw).lower().strip()
-        if raw_lower in word_to_num:
-            return {"num_people": word_to_num[raw_lower]}
-
-        try:
-            n = int(raw_lower)
-            if 1 <= n <= 20:
-                return {"num_people": n}
-            dispatcher.utter_message(text="Please enter a number between 1 and 20.")
-            return {"num_people": None}
-        except (ValueError, TypeError):
-            dispatcher.utter_message(text="I need a number for the party size. How many people?")
-            return {"num_people": None}
+        # slot_value is the raw user text or the entity; check the full utterance
+        user_text = tracker.latest_message.get("text", "") or str(slot_value or "")
+        n = parse_party_size(user_text) or parse_party_size(str(slot_value or ""))
+        if n:
+            return {"num_people": n}
+        logger.info(f"Party size rejected: text={user_text!r}")
+        dispatcher.utter_message(text="Sorry, I need a number between 1 and 20.")
+        return {"num_people": None}
 
 # ============================================================
 # CUSTOM ACTIONS

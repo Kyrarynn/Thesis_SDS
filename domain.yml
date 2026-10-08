@@ -50,11 +50,22 @@ slots:
       - type: custom
 
   # Recommendation form slots
+  # Only filled while the form asks for the district. The raw text is the
+  # fallback, so validate_district always sees what Whisper transcribed
+  # (e.g. "Charlotte, Hamburg") and can map it to the right district.
   district:
     type: text
     mappings:
       - type: from_entity
         entity: district
+        conditions:
+          - active_loop: recommendation_form
+            requested_slot: district
+      - type: from_text
+        not_intent: [stop, goodbye]
+        conditions:
+          - active_loop: recommendation_form
+            requested_slot: district
 
   cuisine:
     type: text
@@ -81,17 +92,27 @@ slots:
       - type: from_entity
         entity: date
 
+  # Raw text while the form asks for the time; validate_time parses it.
+  # (The NLU model often tags "6 p.m." as num_people, so entities are not used.)
   time:
     type: text
     mappings:
-      - type: from_entity
-        entity: time
+      - type: from_text
+        not_intent: [stop, goodbye]
+        conditions:
+          - active_loop: booking_form
+            requested_slot: time
 
+  # Only while the form asks for the party size -> a time like "6 pm"
+  # can no longer end up as num_people = 6.
   num_people:
     type: float
     mappings:
-      - type: from_entity
-        entity: num_people
+      - type: from_text
+        not_intent: [stop, goodbye]
+        conditions:
+          - active_loop: booking_form
+            requested_slot: num_people
 
   # Stores the recommendation list so ActionHandleRecommendationChoice can resolve choices
   recommendations:

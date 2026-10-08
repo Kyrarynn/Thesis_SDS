@@ -22,6 +22,7 @@ import uuid
 import logging
 import tempfile
 import os
+import re
 import whisper
 # for audio saving 
 import shutil
@@ -37,7 +38,20 @@ MONGO_DB  = "sds_study"
 
 # Load Whisper model once at startup — "base" is fast and accurate enough
 # Switch to "small" or "medium" if accuracy needs improvement
-WHISPER_MODEL = whisper.load_model("base")
+# Model size can be switched without code changes, e.g. in PowerShell:
+#   $env:WHISPER_MODEL_NAME = "small"; uvicorn main:app
+# "small" recognises names (districts) clearly better but is ~2-3x slower on CPU.
+WHISPER_MODEL_NAME = os.getenv("WHISPER_MODEL_NAME", "base")
+WHISPER_MODEL = whisper.load_model(WHISPER_MODEL_NAME)
+
+# Vocabulary hints for Whisper, used only right after the system asked for
+# the district or the time. Same for System A and B (no effect on the
+# deliberate errors, which are produced in Rasa).
+ASR_PROMPTS = {
+    "district": "Berlin districts: Charlottenburg, Spandau, Mitte, Kreuzberg, "
+                "Friedrichshain, Neukölln, Prenzlauer Berg, Schöneberg, Pankow, Wilmersdorf.",
+    "time":     "Reservation times: 6 pm, 7 pm, 7:30 pm, 8 pm.",
+}
 
 app = FastAPI(title="SDS Study API")
 
@@ -138,6 +152,22 @@ class RatingRequest(BaseModel):
 AUDIO_DIR = Path("audio_recordings")
 AUDIO_DIR.mkdir(exist_ok=True)
 
+async def asr_prompt_key(session_id: str):
+    """Which vocabulary hint to give Whisper, based on the system's last question."""
+    if not session_id:
+        return None
+    doc = await app.db.sessions.find_one(
+        {"participant_id": session_id}, {"turns": {"$slice": -1}}
+    )
+    turns = (doc or {}).get("turns") or []
+    last_bot = (turns[-1].get("bot_text") or "").lower() if turns else ""
+    if "district" in last_bot:
+        return "district"
+    if re.search(r"\btime\b", last_bot):
+        return "time"
+    return None
+
+
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...),
                            participant_id: str = Form(""),
@@ -172,14 +202,29 @@ async def transcribe_audio(audio: UploadFile = File(...),
         shutil.copy(tmp_path, save_path)
         logger.info(f"Audio saved: {save_path}")
 
+    prompt_key = await asr_prompt_key(participant_id)
+    prompt = ASR_PROMPTS.get(prompt_key)
+
     try:
         result = WHISPER_MODEL.transcribe(
             tmp_path,
             language="en",
             fp16=False,
+            initial_prompt=prompt,
         )
         transcript = result.get("text", "").strip()
-        logger.info(f"Whisper transcript: {transcript}")
+
+        # Guard: with a prompt, Whisper can "hear" the prompt in silence.
+        segments = result.get("segments", [])
+        if prompt and (
+            not segments
+            or all(seg.get("no_speech_prob", 0) > 0.6 for seg in segments)
+            or (len(transcript) > 25 and transcript.strip(" .").lower() in prompt.lower())
+        ):
+            logger.info(f"Whisper output discarded as silence/prompt echo: {transcript!r}")
+            transcript = ""
+
+        logger.info(f"Whisper transcript (prompt={prompt_key}): {transcript}")
         return {"text": transcript}
     except Exception as e:
         logger.error(f"Whisper processing failed: {e}", exc_info=True)
