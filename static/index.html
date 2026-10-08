@@ -399,6 +399,11 @@ async function sendMessage(text) {
       showRating(turnIndex);
       turnIndex++;
     });
+  } else {
+    // Empty bot reply: no rating, but the turn is still logged in MongoDB.
+    // Advance the index anyway, otherwise later ratings land on the wrong
+    // turn and the next audio file overwrites this turn's recording.
+    turnIndex++;
   }
 
   setStatus('');

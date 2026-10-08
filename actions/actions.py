@@ -39,8 +39,12 @@ class ActionSessionStart(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
 
-        # Standard session start events — always required
-        events = [SessionStarted(), ActionExecuted("action_listen")]
+        # Standard session start events. NOTE: action_listen must be the LAST
+        # event (see end of this method). If a SlotSet comes after it, a
+        # fallback on the participant's very first utterance reverts it
+        # (UserUtteranceReverted rewinds up to the previous action_listen),
+        # and system_version silently becomes None for the whole session.
+        events = [SessionStarted()]
 
         # -------------------------------------------------------
         # TEMPORARY — hardcoded for testing, remove before study
@@ -54,9 +58,13 @@ class ActionSessionStart(Action):
         """ 
         metadata = tracker.get_slot("session_started_metadata") or {}
         """
-        # Extract metadata from the latest user message event
-        last_user_event = tracker.get_last_event_for("user")
-        metadata = last_user_event.get("metadata", {}) if last_user_event else {}
+        # Rasa puts the request metadata into this slot before running
+        # action_session_start; fall back to the metadata of the last user event
+        # (the explicit "/session_start" message sent by FastAPI).
+        metadata = tracker.get_slot("session_started_metadata") or {}
+        if not metadata.get("system_version"):
+            last_user_event = tracker.get_last_event_for("user")
+            metadata = (last_user_event or {}).get("metadata") or {}
 
         system_version = metadata.get("system_version")
 
@@ -69,6 +77,7 @@ class ActionSessionStart(Action):
                 f"Error injection will not fire."
             )
 
+        events.append(ActionExecuted("action_listen"))   # must stay last
         return events
 
 # ============================================================
@@ -85,6 +94,71 @@ def get_last_user_text(tracker: Tracker) -> str:
         if event.get("event") == "user":
             return event.get("text", "").strip()
     return ""
+
+def get_system_version(tracker: Tracker):
+    """System version of this session: the slot, or (if the slot was lost)
+    the last SlotSet(system_version) in the event history of this session."""
+    v = tracker.get_slot("system_version")
+    if v in ("A", "B"):
+        return v
+    for e in reversed(tracker.events):
+        if e.get("event") == "session_started":
+            break
+        if e.get("event") == "slot" and e.get("name") == "system_version" and e.get("value") in ("A", "B"):
+            logger.warning(f"system_version slot was empty, recovered {e['value']!r} from history "
+                           f"(sender={tracker.sender_id})")
+            return e["value"]
+    logger.warning(f"system_version missing! sender={tracker.sender_id}")
+    return None
+
+
+def a_error_already_fired(tracker: Tracker) -> bool:
+    """True if the System A error was already shown in this session.
+    Read from the event history, because the error_fired slot is reset
+    to False after the participant's correction."""
+    for e in reversed(tracker.events):
+        if e.get("event") == "session_started":
+            return False
+        if e.get("event") == "slot" and e.get("name") == "error_fired" and e.get("value") is True:
+            return True
+    return False
+
+
+def slots_set_this_turn(tracker: Tracker) -> Dict[Text, Any]:
+    """Slots that were set after the latest user message (slot extraction)."""
+    slots: Dict[Text, Any] = {}
+    for e in reversed(tracker.events):
+        if e.get("event") == "user":
+            break
+        if e.get("event") == "slot" and e.get("name") not in slots:
+            slots[e["name"]] = e.get("value")
+    return slots
+
+
+class RevalidateAfterUnhappyPathMixin:
+    """Rasa skips slot validation on the first form run after an unhappy path
+    (e.g. after action_handle_form_fallback): the form is called with
+    LoopInterrupted(True) and slots_to_validate() is empty, so the slot that
+    was just extracted (e.g. food_preference="vegan") is accepted unvalidated
+    -> the System A error never fires. Here we validate such slots ourselves."""
+
+    async def run(self, dispatcher, tracker, domain):
+        events = await super().run(dispatcher, tracker, domain)
+        validated = tracker.slots_to_validate()
+        required = await self.required_slots(
+            self.domain_slots(domain), dispatcher, tracker, domain
+        )
+        for slot, value in slots_set_this_turn(tracker).items():
+            if slot not in required or slot in validated or value is None:
+                continue
+            validate = getattr(self, f"validate_{slot}", None)
+            if validate is None:
+                continue
+            logger.info(f"Re-validating {slot}={value!r} skipped by Rasa (form returned from unhappy path)")
+            result = validate(value, dispatcher, tracker, domain)
+            events.extend(SlotSet(k, v) for k, v in (result or {}).items())
+        return events
+
 
 # reset function
 class ActionResetAfterBooking(Action):
@@ -250,7 +324,7 @@ def parse_party_size(text: Text):
 # FORM VALIDATORS
 # ============================================================
 
-class ValidateRecommendationForm(FormValidationAction):
+class ValidateRecommendationForm(RevalidateAfterUnhappyPathMixin, FormValidationAction):
     """
     Validates district, cuisine, and food_preference slots.
 
@@ -300,8 +374,8 @@ class ValidateRecommendationForm(FormValidationAction):
         domain: DomainDict,
     ) -> Dict[Text, Any]:
 
-        system_version = tracker.get_slot("system_version")
-        error_fired = tracker.get_slot("error_fired")
+        system_version = get_system_version(tracker)
+        error_fired = a_error_already_fired(tracker)
 
         # Check if no preference -> intent == deny (happens when user says "no" or something similar)
         last_intent = tracker.latest_message.get("intent", {}).get("name")
@@ -313,6 +387,8 @@ class ValidateRecommendationForm(FormValidationAction):
         # The error only fires on the first attempt (error_fired=False)
         # so the dialog recovers naturally on the second try.
         # -------------------------------------------------------
+        logger.info(f"FoodPref | system={system_version} | error_already_fired={error_fired} "
+                    f"| value={slot_value!r} | text={get_last_user_text(tracker)!r}")
         if system_version == "A" and not error_fired:
             raw = get_last_user_text(tracker)
             # Generate a plausible mishearing based on what the user said
@@ -352,7 +428,7 @@ class ValidateRecommendationForm(FormValidationAction):
 
 
 
-class ValidateBookingForm(FormValidationAction):
+class ValidateBookingForm(RevalidateAfterUnhappyPathMixin, FormValidationAction):
     """
     Validates date, time, and num_people slots.
     Uses raw text fallback for date and time since these are
@@ -665,7 +741,7 @@ class ActionHandleBooking(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
 
-        system_version = tracker.get_slot("system_version")
+        system_version = get_system_version(tracker)
         error_fired    = tracker.get_slot("error_fired")
         restaurant     = tracker.get_slot("restaurant_name")
         date           = tracker.get_slot("date")
